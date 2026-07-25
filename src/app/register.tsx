@@ -51,7 +51,7 @@ export default function RegisterScreen() {
     setIsLoading(true);
 
     try {
-      await registerUser(email, password);
+      await registerUser(email, password, name);
       router.replace('/dashboard' as never);
     } catch (error: unknown) {
       setErrorMessage(error instanceof Error ? error.message : 'Registration failed');

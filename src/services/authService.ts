@@ -3,11 +3,20 @@ import {
     signInWithEmailAndPassword,
     signOut,
 } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
-import { auth } from './firebase';
+import { auth, db } from './firebase';
 
-export async function registerUser(email: string, password: string) {
+export async function registerUser(email: string, password: string, name?: string) {
   const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
+
+  await setDoc(doc(db, 'users', result.user.uid), {
+    uid: result.user.uid,
+    email: result.user.email,
+    name: name?.trim() || '',
+    createdAt: new Date().toISOString(),
+  });
+
   return result.user;
 }
 
