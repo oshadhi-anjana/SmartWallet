@@ -5,8 +5,14 @@ import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { initializeDatabase } from '../database/database';
+import { useSync } from '../hooks/useSync';
 
 SplashScreen.preventAutoHideAsync();
+
+function SyncBridge() {
+  useSync();
+  return null;
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -19,6 +25,7 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <SyncBridge />
       <AnimatedSplashOverlay />
       <Stack
         screenOptions={{
