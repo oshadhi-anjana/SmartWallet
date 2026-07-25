@@ -35,7 +35,12 @@ export default function RootLayout() {
         <Stack.Screen name="login" options={{ title: 'Login' }} />
         <Stack.Screen name="register" options={{ title: 'Create Account' }} />
         <Stack.Screen name="dashboard" options={{ title: 'SmartWallet' }} />
+        <Stack.Screen name="transactions" options={{ title: 'Transactions' }} />
+        <Stack.Screen name="budget" options={{ title: 'Budget' }} />
+        <Stack.Screen name="savings" options={{ title: 'Savings' }} />
+        <Stack.Screen name="analytics" options={{ title: 'Analytics' }} />
         <Stack.Screen name="add-transaction" options={{ title: 'Add Transaction' }} />
+        <Stack.Screen name="camera" options={{ title: 'Camera' }} />
       </Stack>
     </ThemeProvider>
   );
