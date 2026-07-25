@@ -1,9 +1,9 @@
 import { doc, setDoc } from 'firebase/firestore';
 
 import {
-  getPendingTransactions,
-  markTransactionFailed,
-  markTransactionSynced,
+    getPendingTransactions,
+    markTransactionFailed,
+    markTransactionSynced,
 } from '../database/transactionQueries';
 import { firestore } from './firebase';
 
