@@ -27,15 +27,10 @@ if (requiredFirebaseValues.some((value) => !value)) {
   );
 }
 
-// Prevent Firebase from being initialized more than once during development.
-const firebaseApp =
-  getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-const firebaseAuth = getAuth(firebaseApp);
-const firestoreDatabase = getFirestore(firebaseApp);
-
-export {
-  firebaseApp,
-  firebaseAuth,
-  firestoreDatabase,
-};
+export const auth = getAuth(firebaseApp);
+export const db = getFirestore(firebaseApp);
+export const firebaseAuth = auth;
+export const firestoreDatabase = db;
+export default firebaseApp;
