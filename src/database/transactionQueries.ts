@@ -74,17 +74,26 @@ export async function getPendingTransactions() {
       created_at AS createdAt,
       updated_at AS updatedAt
     FROM transactions
-    WHERE sync_status = 'pending'`
+    WHERE sync_status IN ('pending', 'failed')`
   );
 }
 
-export async function markTransactionSynced(id: string) {
+export async function updateTransactionSyncStatus(id: string, syncStatus: Transaction['syncStatus']) {
   const db = await getDatabase();
 
   await db.runAsync(
     `UPDATE transactions
-     SET sync_status = 'synced'
+     SET sync_status = ?
      WHERE id = ?`,
+    syncStatus,
     id
   );
+}
+
+export async function markTransactionSynced(id: string) {
+  await updateTransactionSyncStatus(id, 'synced');
+}
+
+export async function markTransactionFailed(id: string) {
+  await updateTransactionSyncStatus(id, 'failed');
 }

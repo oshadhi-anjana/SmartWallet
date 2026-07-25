@@ -7,22 +7,36 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { getTransactions } from '@/database/transactionQueries';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { Transaction } from '@/models/Transaction';
 import { auth } from '@/services/firebase';
+import { syncPendingTransactions } from '@/services/syncService';
 
 export default function TransactionsScreen() {
   const router = useRouter();
+  const isOnline = useNetworkStatus();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  async function loadTransactions() {
+    const userId = auth.currentUser?.uid ?? 'local-user';
+    const result = await getTransactions(userId);
+    setTransactions(result);
+  }
 
   useEffect(() => {
-    async function loadTransactions() {
-      const userId = auth.currentUser?.uid ?? 'local-user';
-      const result = await getTransactions(userId);
-      setTransactions(result);
-    }
-
     loadTransactions();
   }, []);
+
+  async function handleRetrySync() {
+    setIsSyncing(true);
+    try {
+      await syncPendingTransactions();
+      await loadTransactions();
+    } finally {
+      setIsSyncing(false);
+    }
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -45,9 +59,12 @@ export default function TransactionsScreen() {
                     {item.type === 'income' ? '+' : '-'}${item.amount.toFixed(2)}
                   </ThemedText>
                 </ThemedView>
-                <ThemedText themeColor="textSecondary">
-                  {item.description || 'No description'} • {item.transactionDate}
-                </ThemedText>
+                <ThemedView style={styles.metaRow}>
+                  <ThemedText themeColor="textSecondary">
+                    {item.description || 'No description'} • {item.transactionDate}
+                  </ThemedText>
+                  <ThemedText style={getSyncBadgeStyle(item.syncStatus, isOnline)}>{getSyncLabel(item.syncStatus, isOnline)}</ThemedText>
+                </ThemedView>
               </ThemedView>
             ))
           )}
@@ -57,10 +74,50 @@ export default function TransactionsScreen() {
               Add a transaction
             </ThemedText>
           </Pressable>
+
+          <Pressable style={styles.secondaryButton} onPress={handleRetrySync} disabled={isSyncing}>
+            <ThemedText type="smallBold" style={styles.secondaryButtonText}>
+              {isSyncing ? 'Syncing…' : 'Retry sync'}
+            </ThemedText>
+          </Pressable>
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
+}
+
+function getSyncLabel(syncStatus: Transaction['syncStatus'], isOnline: boolean) {
+  if (!isOnline) {
+    return 'Offline';
+  }
+
+  switch (syncStatus) {
+    case 'synced':
+      return 'Synced';
+    case 'pending':
+      return 'Pending';
+    case 'failed':
+      return 'Failed';
+    default:
+      return 'Syncing';
+  }
+}
+
+function getSyncBadgeStyle(syncStatus: Transaction['syncStatus'], isOnline: boolean) {
+  if (!isOnline) {
+    return styles.badgeOffline;
+  }
+
+  switch (syncStatus) {
+    case 'synced':
+      return styles.badgeSynced;
+    case 'pending':
+      return styles.badgePending;
+    case 'failed':
+      return styles.badgeFailed;
+    default:
+      return styles.badgeSyncing;
+  }
 }
 
 const styles = StyleSheet.create({
@@ -94,6 +151,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: Spacing.one,
+    flexWrap: 'wrap',
+  },
+  badgeOffline: {
+    color: '#8b5a00',
+    fontWeight: '700',
+  },
+  badgeSyncing: {
+    color: '#1d4ed8',
+    fontWeight: '700',
+  },
+  badgeSynced: {
+    color: '#15803d',
+    fontWeight: '700',
+  },
+  badgePending: {
+    color: '#b45309',
+    fontWeight: '700',
+  },
+  badgeFailed: {
+    color: '#b91c1c',
+    fontWeight: '700',
+  },
   incomeText: {
     color: '#1e8f57',
   },
@@ -107,7 +191,18 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: 'center',
   },
+  secondaryButton: {
+    borderWidth: 1,
+    borderColor: '#3c87f7',
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: 999,
+    alignItems: 'center',
+  },
   buttonText: {
     color: '#ffffff',
+  },
+  secondaryButtonText: {
+    color: '#3c87f7',
   },
 });
