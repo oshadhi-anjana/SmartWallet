@@ -1,13 +1,64 @@
-import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet } from 'react-native';
+import { Link, useRouter } from 'expo-router';
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { registerUser } from '../services/authService';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const validate = () => {
+    if (!name.trim()) {
+      setErrorMessage('Name is required');
+      return false;
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email.trim())) {
+      setErrorMessage('Email must be valid');
+      return false;
+    }
+
+    if (password.length < 6) {
+      setErrorMessage('Password must be at least 6 characters');
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMessage('Passwords must match');
+      return false;
+    }
+
+    setErrorMessage('');
+    return true;
+  };
+
+  const handleRegister = async () => {
+    if (!validate()) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      await registerUser(email, password, name);
+      router.replace('/dashboard' as never);
+    } catch (error: unknown) {
+      setErrorMessage(error instanceof Error ? error.message : 'Registration failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -18,11 +69,31 @@ export default function RegisterScreen() {
             Start building smarter money habits with secure, simple expense tracking.
           </ThemedText>
 
-          <Pressable style={styles.primaryButton} onPress={() => router.push('/dashboard' as never)}>
-            <ThemedText type="smallBold" style={styles.buttonText}>
-              Register
-            </ThemedText>
+          {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+
+          <TextInput style={styles.input} placeholder="Name" value={name} onChangeText={setName} />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <TextInput style={styles.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm password"
+            secureTextEntry
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
+
+          <Pressable style={styles.primaryButton} onPress={handleRegister} disabled={isLoading}>
+            {isLoading ? <ActivityIndicator color="#fff" /> : <ThemedText type="smallBold" style={styles.buttonText}>Register</ThemedText>}
           </Pressable>
+
+          <Link href="/login" style={styles.link}>Already have an account? Login</Link>
         </ThemedView>
       </SafeAreaView>
     </ThemedView>
@@ -45,7 +116,15 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: Spacing.three,
     padding: Spacing.four,
-    gap: Spacing.three,
+    gap: Spacing.two,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#d2d9e2',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
   },
   primaryButton: {
     backgroundColor: '#3c87f7',
@@ -53,8 +132,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     borderRadius: 999,
     alignItems: 'center',
+    marginTop: Spacing.one,
   },
   buttonText: {
     color: '#ffffff',
+  },
+  error: {
+    color: '#c0392b',
+    fontSize: 13,
+  },
+  link: {
+    color: '#3c87f7',
+    textAlign: 'center',
+    marginTop: Spacing.one,
   },
 });
