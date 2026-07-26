@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { PasswordField } from '@/components/password-field';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { loginUser } from '../services/authService';
 
@@ -48,7 +49,12 @@ export default function LoginScreen() {
             value={email}
             onChangeText={setEmail}
           />
-          <TextInput style={styles.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
+          <PasswordField
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            autoComplete="current-password"
+          />
 
           <Pressable style={styles.primaryButton} onPress={handleLogin} disabled={isLoading}>
             {isLoading ? <ActivityIndicator color="#fff" /> : <ThemedText type="smallBold" style={styles.buttonText}>Log in</ThemedText>}

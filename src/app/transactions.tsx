@@ -52,7 +52,6 @@ export default function TransactionsScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
-          <ScreenNav />
           <ThemedText type="subtitle">Transactions</ThemedText>
           <ThemedText themeColor="textSecondary">Recent activity from your local wallet.</ThemedText>
 
@@ -100,6 +99,7 @@ export default function TransactionsScreen() {
             </ThemedText>
           </Pressable>
         </ScrollView>
+        <ScreenNav />
       </SafeAreaView>
     </ThemedView>
   );

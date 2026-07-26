@@ -66,7 +66,6 @@ export default function DashboardScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
-          <ScreenNav />
           <ThemedText type="subtitle">Dashboard</ThemedText>
           <ThemedText themeColor="textSecondary">Your offline-first money snapshot.</ThemedText>
 
@@ -133,6 +132,7 @@ export default function DashboardScreen() {
             <ThemedText type="smallBold" style={styles.buttonText}>Add transaction</ThemedText>
           </Pressable>
         </ScrollView>
+        <ScreenNav />
       </SafeAreaView>
     </ThemedView>
   );

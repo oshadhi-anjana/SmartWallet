@@ -53,7 +53,6 @@ export default function AnalyticsScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
-          <ScreenNav />
           <ThemedText type="subtitle">Analytics</ThemedText>
           <ThemedText themeColor="textSecondary">Insights derived from your local transaction history.</ThemedText>
 
@@ -83,6 +82,7 @@ export default function AnalyticsScreen() {
             )}
           </ThemedView>
         </ScrollView>
+        <ScreenNav />
       </SafeAreaView>
     </ThemedView>
   );

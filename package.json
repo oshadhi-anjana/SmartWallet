@@ -12,7 +12,9 @@
     "lint": "expo lint"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.0.3",
     "@hookform/resolvers": "^3.10.0",
+    "@react-native-community/datetimepicker": "8.4.4",
     "@react-native-community/netinfo": "11.4.1",
     "date-fns": "^4.4.0",
     "expo": "~54.0.0",

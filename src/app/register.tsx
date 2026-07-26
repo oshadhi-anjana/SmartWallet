@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { PasswordField } from '@/components/password-field';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { registerUser } from '../services/authService';
 
@@ -80,11 +81,14 @@ export default function RegisterScreen() {
             value={email}
             onChangeText={setEmail}
           />
-          <TextInput style={styles.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
-          <TextInput
-            style={styles.input}
+          <PasswordField
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            autoComplete="new-password"
+          />
+          <PasswordField
             placeholder="Confirm password"
-            secureTextEntry
             value={confirmPassword}
             onChangeText={setConfirmPassword}
           />
