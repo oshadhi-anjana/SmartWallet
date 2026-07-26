@@ -41,7 +41,7 @@ export default function SavingsScreen() {
   }
 
   return <ThemedView style={styles.container}><SafeAreaView style={styles.safeArea}>
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <ThemedText type="subtitle">Savings goals</ThemedText>
       <ThemedText themeColor="textSecondary">Create goals and track progress offline.</ThemedText>
       <ThemedView type="backgroundElement" style={styles.card}>

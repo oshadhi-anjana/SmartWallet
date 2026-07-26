@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PasswordField } from '@/components/password-field';
@@ -93,7 +93,13 @@ export default function LoginScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <SafeAreaView style={styles.safeArea}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            automaticallyAdjustKeyboardInsets
+            showsVerticalScrollIndicator={false}>
         <Pressable style={styles.back} onPress={() => router.back()} accessibilityLabel="Go back">
           <Ionicons name="arrow-back" size={23} color="#163D2C" />
         </Pressable>
@@ -141,7 +147,9 @@ export default function LoginScreen() {
           <ThemedText themeColor="textSecondary" style={styles.signupText}>Don&apos;t have an account?</ThemedText>
           <Link href="/register" style={styles.signupLink}> Sign Up</Link>
         </View>
-      </SafeAreaView>
+          </ScrollView>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </ThemedView>
   );
 }
@@ -153,6 +161,7 @@ function GoogleMark() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1, paddingHorizontal: Spacing.four, maxWidth: MaxContentWidth, alignSelf: 'center', width: '100%' },
+  scrollContent: { flexGrow: 1 },
   back: { width: 44, height: 44, alignItems: 'flex-start', justifyContent: 'center', marginTop: 4 },
   form: { marginTop: 22 },
   heading: { textAlign: 'center', fontSize: 25, lineHeight: 33, color: '#123D2B' },

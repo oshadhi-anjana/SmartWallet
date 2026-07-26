@@ -60,7 +60,7 @@ export default function BudgetScreen() {
 
   return (
     <ThemedView style={styles.container}><SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
         <ThemedText type="subtitle">Monthly budgets</ThemedText>
         <ThemedText themeColor="textSecondary">Set category limits and see progress from your local expenses.</ThemedText>
         <ThemedView type="backgroundElement" style={styles.card}>

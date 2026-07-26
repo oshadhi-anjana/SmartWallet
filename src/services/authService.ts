@@ -28,7 +28,30 @@ export async function registerUser(email: string, password: string, name?: strin
 
 export async function loginUser(email: string, password: string) {
   const result = await signInWithEmailAndPassword(auth, email.trim(), password);
+  if (!result.user.displayName) {
+    const profile = await getDoc(doc(db, 'users', result.user.uid));
+    const savedName = profile.exists() ? String(profile.data().name ?? '').trim() : '';
+    if (savedName) {
+      await updateProfile(result.user, { displayName: savedName });
+    }
+  }
   return result.user;
+}
+
+export async function getCurrentUserName() {
+  const user = auth.currentUser;
+  if (!user) return '';
+  if (user.displayName?.trim()) return user.displayName.trim();
+
+  const profile = await getDoc(doc(db, 'users', user.uid));
+  const savedName = profile.exists() ? String(profile.data().name ?? '').trim() : '';
+  if (savedName) {
+    await updateProfile(user, { displayName: savedName });
+    return savedName;
+  }
+
+  const emailName = user.email?.split('@')[0].replace(/[._-]+/g, ' ').trim() ?? '';
+  return emailName.replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 export async function requestPasswordReset(email: string) {

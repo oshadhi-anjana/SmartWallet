@@ -1,9 +1,11 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Image,
+    KeyboardAvoidingView,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -24,6 +26,7 @@ const categoryOptions = ['Food', 'Transport', 'Bills', 'Shopping', 'Salary', 'Fr
 
 export default function AddTransactionScreen() {
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
   const { id } = useLocalSearchParams<{ id?: string }>();
   const [type, setType] = useState<Transaction['type']>('expense');
   const [amount, setAmount] = useState('');
@@ -123,7 +126,17 @@ export default function AddTransactionScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.content}>
+        <KeyboardAvoidingView
+          style={styles.keyboardView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}>
+          <ScrollView
+            ref={scrollRef}
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            automaticallyAdjustKeyboardInsets
+            showsVerticalScrollIndicator={false}>
           <ThemedView type="backgroundElement" style={styles.card}>
             <ThemedText type="subtitle">{id ? 'Edit transaction' : 'Add transaction'}</ThemedText>
             <ThemedText themeColor="textSecondary">
@@ -181,6 +194,7 @@ export default function AddTransactionScreen() {
               onChangeText={setDescription}
               placeholder="What was this for?"
               multiline
+              onFocus={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 250)}
             />
 
             <ThemedView style={styles.receiptActions}>
@@ -199,7 +213,8 @@ export default function AddTransactionScreen() {
               {loading ? <ActivityIndicator color="#ffffff" /> : <ThemedText type="smallBold" style={styles.buttonText}>{id ? 'Update transaction' : 'Save transaction'}</ThemedText>}
             </Pressable>
           </ThemedView>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -209,6 +224,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  keyboardView: { flex: 1 },
   safeArea: {
     flex: 1,
     paddingHorizontal: Spacing.four,

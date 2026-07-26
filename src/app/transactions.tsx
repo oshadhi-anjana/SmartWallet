@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScreenNav } from '@/components/screen-nav';
@@ -23,13 +23,28 @@ export default function TransactionsScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const load = useCallback(async () => {
     setTransactions(await getTransactions(auth.currentUser?.uid ?? 'local-user'));
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const visible = filter === 'all' ? transactions : transactions.filter((item) => item.type === filter);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const visible = transactions.filter((item) => {
+    if (filter !== 'all' && item.type !== filter) return false;
+    if (!normalizedQuery) return true;
+
+    return [
+      item.category,
+      item.description,
+      item.transactionDate,
+      item.type,
+      String(item.amount),
+      money(item.amount),
+    ].some((value) => value?.toLowerCase().includes(normalizedQuery));
+  });
 
   async function retrySync() {
     setIsSyncing(true);
@@ -61,11 +76,38 @@ export default function TransactionsScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
           <View style={styles.titleRow}>
             <ThemedText type="subtitle" style={styles.title}>Transactions</ThemedText>
-            <Pressable style={styles.search} accessibilityLabel="Search transactions"><Ionicons name="search-outline" size={22} color="#212121" /></Pressable>
+            <Pressable
+              style={[styles.search, searchVisible && styles.searchActive]}
+              accessibilityLabel={searchVisible ? 'Close transaction search' : 'Search transactions'}
+              onPress={() => {
+                setSearchVisible((value) => !value);
+                if (searchVisible) setSearchQuery('');
+              }}>
+              <Ionicons name={searchVisible ? 'close' : 'search-outline'} size={22} color={searchVisible ? '#FFFFFF' : '#212121'} />
+            </Pressable>
           </View>
+          {searchVisible ? (
+            <View style={styles.searchField}>
+              <Ionicons name="search-outline" size={20} color="#68756F" />
+              <TextInput
+                autoFocus
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Search category, date, amount..."
+                placeholderTextColor="#8A938F"
+                returnKeyType="search"
+                style={styles.searchInput}
+              />
+              {searchQuery ? (
+                <Pressable onPress={() => setSearchQuery('')} accessibilityLabel="Clear search">
+                  <Ionicons name="close-circle" size={20} color="#68756F" />
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
           <View style={styles.filters}>
             {(['all', 'income', 'expense'] as const).map((item) => (
               <Pressable key={item} onPress={() => setFilter(item)} style={[styles.filter, filter === item && styles.filterActive]}>
@@ -81,8 +123,10 @@ export default function TransactionsScreen() {
           {visible.length === 0 ? (
             <View style={styles.empty}>
               <View style={styles.emptyIcon}><Ionicons name="receipt-outline" size={32} color="#0F9D58" /></View>
-              <ThemedText type="smallBold">No transactions found</ThemedText>
-              <ThemedText themeColor="textSecondary" style={styles.emptyText}>Use the plus button to record income or an expense.</ThemedText>
+              <ThemedText type="smallBold">{normalizedQuery ? 'No matching transactions' : 'No transactions found'}</ThemedText>
+              <ThemedText themeColor="textSecondary" style={styles.emptyText}>
+                {normalizedQuery ? 'Try another category, date, type, or amount.' : 'Use the plus button to record income or an expense.'}
+              </ThemedText>
             </View>
           ) : visible.map((item) => {
             const income = item.type === 'income';
@@ -123,6 +167,9 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.three, paddingTop: Spacing.three, paddingBottom: BottomTabInset + 105, gap: 11 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, title: { fontSize: 27, lineHeight: 35 },
   search: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#ECE9DF' },
+  searchActive: { backgroundColor: '#0F9D58', borderColor: '#0F9D58' },
+  searchField: { minHeight: 48, paddingHorizontal: 13, borderRadius: 15, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DDE5E1', flexDirection: 'row', alignItems: 'center', gap: 9 },
+  searchInput: { flex: 1, color: '#212121', fontSize: 14, paddingVertical: 10 },
   filters: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 15, padding: 4, borderWidth: 1, borderColor: '#ECE9DF' },
   filter: { flex: 1, height: 39, borderRadius: 11, alignItems: 'center', justifyContent: 'center' }, filterActive: { backgroundColor: '#0F9D58' },
   filterText: { color: '#68756F' }, filterActiveText: { color: '#FFFFFF' },
