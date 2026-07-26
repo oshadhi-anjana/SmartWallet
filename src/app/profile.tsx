@@ -24,6 +24,7 @@ export default function ProfileScreen() {
 
           <Pressable style={styles.primaryButton} onPress={async () => {
             await logoutUser();
+            router.dismissAll();
             router.replace('/login' as never);
           }}>
             <ThemedText type="smallBold" style={styles.buttonText}>
