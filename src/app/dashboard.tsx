@@ -1,63 +1,107 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScreenNav } from '@/components/screen-nav';
+import { useAppTheme } from '@/components/app-theme-provider';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { getPendingTransactions, getTransactions } from '@/database/transactionQueries';
+import { getTransactions } from '@/database/transactionQueries';
 import { Transaction } from '@/models/Transaction';
+import { getCurrentUserName } from '@/services/authService';
 import { auth } from '@/services/firebase';
-
-const currency = (value: number) => `LKR ${value.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+import { refreshWalletData } from '@/services/syncService';
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { formatCurrency: currency, theme } = useAppTheme();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [pendingCount, setPendingCount] = useState(0);
+  const [greeting, setGreeting] = useState(getSriLankaGreeting);
+  const [userName, setUserName] = useState(auth.currentUser?.displayName ?? '');
+  const [notificationOpen, setNotificationOpen] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => setGreeting(getSriLankaGreeting()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   useFocusEffect(useCallback(() => {
     async function load() {
-      const userId = auth.currentUser?.uid ?? 'local-user';
-      const [items, pending] = await Promise.all([getTransactions(userId), getPendingTransactions()]);
-      setTransactions(items);
-      setPendingCount(pending.length);
+      try {
+        const userId = auth.currentUser?.uid ?? 'local-user';
+        const items = await getTransactions(userId);
+        setTransactions(items);
+        setUserName(auth.currentUser?.displayName ?? auth.currentUser?.email?.split('@')[0] ?? '');
+
+        getCurrentUserName().then(setUserName).catch(() => undefined);
+        refreshWalletData(userId).then(async () => {
+          setTransactions(await getTransactions(userId));
+        }).catch(() => undefined);
+      } catch (error) {
+        console.error('Unable to load the dashboard.', error);
+      }
     }
-    load();
+    load().catch(() => undefined);
   }, []));
 
   const summary = useMemo(() => {
     const income = transactions.filter((item) => item.type === 'income').reduce((sum, item) => sum + item.amount, 0);
     const expense = transactions.filter((item) => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0);
-    return { income, expense, balance: income - expense, recent: transactions.slice(0, 4) };
+    const latestIncome = transactions.find((item) => item.type === 'income');
+    const latestExpense = transactions.find((item) => item.type === 'expense');
+    const recent = [latestIncome, latestExpense]
+      .filter((item): item is Transaction => Boolean(item))
+      .sort((a, b) => {
+        const aTime = new Date(`${a.transactionDate}T00:00:00`).getTime();
+        const bTime = new Date(`${b.transactionDate}T00:00:00`).getTime();
+        return bTime - aTime || b.createdAt.localeCompare(a.createdAt);
+      });
+
+    return { income, expense, balance: income - expense, recent };
   }, [transactions]);
 
-  const firstName = auth.currentUser?.displayName?.split(' ')[0] || 'there';
+  const monthlySummary = useMemo(() => {
+    const currentMonth = getSriLankaMonth();
+    const currentTransactions = transactions.filter((item) => item.transactionDate.startsWith(currentMonth));
+    const income = currentTransactions
+      .filter((item) => item.type === 'income')
+      .reduce((sum, item) => sum + item.amount, 0);
+    const expense = currentTransactions
+      .filter((item) => item.type === 'expense')
+      .reduce((sum, item) => sum + item.amount, 0);
+    return { income, expense, overspent: expense > income };
+  }, [transactions]);
+
+  const firstName = userName.split(' ')[0] || 'there';
   const quickActions = [
-    ['Add expense', 'bag-remove-outline', '/add-transaction', '#FFE6DF', '#D32F2F'],
-    ['Add income', 'wallet-outline', '/add-transaction?type=income', '#E3F4E7', '#2E7D32'],
+    ['Add transaction', 'add-circle-outline', '/add-transaction', `${theme.primary}18`, theme.primary],
     ['Budgets', 'calendar-outline', '/budget', '#FFF0DC', '#F57C00'],
     ['Savings', 'shield-checkmark-outline', '/savings', '#FFF4CD', '#B77900'],
+    ['Spending report', 'pie-chart-outline', '/analytics', '#FFE6DF', '#D32F2F'],
   ] as const;
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.hero}>
+          <View style={[styles.hero, { backgroundColor: theme.primary }]}>
             <View style={styles.heroTop}>
               <View>
-                <ThemedText style={styles.greeting}>Good Morning,</ThemedText>
+                <ThemedText style={styles.greeting}>{greeting},</ThemedText>
                 <ThemedText type="subtitle" style={styles.name}>{firstName} 👋</ThemedText>
               </View>
-              <View style={styles.notification}>
+              <Pressable
+                style={styles.notification}
+                onPress={() => setNotificationOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={monthlySummary.overspent ? 'Monthly spending alert' : 'Notifications'}>
                 <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
-                {pendingCount > 0 ? <View style={styles.notificationDot} /> : null}
-              </View>
+                {monthlySummary.overspent ? <View style={styles.notificationDot} /> : null}
+              </Pressable>
             </View>
             <ThemedText style={styles.balanceLabel}>Total balance</ThemedText>
             <ThemedText style={styles.balance}>{currency(summary.balance)}</ThemedText>
@@ -67,15 +111,15 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          <View style={styles.summaryCard}>
+          <View style={[styles.summaryCard, { backgroundColor: theme.backgroundElement }]}>
             <View style={styles.summaryItem}>
               <ThemedText style={styles.summaryLabel}>Income</ThemedText>
-              <ThemedText style={styles.income}>{currency(summary.income)}</ThemedText>
+              <ThemedText style={[styles.income, { color: theme.success }]}>{currency(summary.income)}</ThemedText>
             </View>
             <View style={styles.divider} />
             <View style={styles.summaryItem}>
               <ThemedText style={styles.summaryLabel}>Expenses</ThemedText>
-              <ThemedText style={styles.expense}>{currency(summary.expense)}</ThemedText>
+              <ThemedText style={[styles.expense, { color: theme.expense }]}>{currency(summary.expense)}</ThemedText>
             </View>
           </View>
 
@@ -92,10 +136,10 @@ export default function DashboardScreen() {
           </View>
 
           <SectionTitle title="Recent transactions" action="See all" onPress={() => router.push('/transactions' as never)} />
-          <View style={styles.listCard}>
+          <View style={[styles.listCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
             {summary.recent.length === 0 ? (
               <View style={styles.empty}>
-                <Ionicons name="receipt-outline" size={30} color="#0F9D58" />
+                <Ionicons name="receipt-outline" size={30} color={theme.primary} />
                 <ThemedText type="smallBold">No transactions yet</ThemedText>
                 <ThemedText themeColor="textSecondary" style={styles.center}>Tap the plus button to add your first one.</ThemedText>
               </View>
@@ -104,39 +148,126 @@ export default function DashboardScreen() {
             ))}
           </View>
 
-          <Pressable style={styles.reportCard} onPress={() => router.push('/analytics' as never)}>
-            <View style={styles.reportIcon}><Ionicons name="pie-chart-outline" size={24} color="#F57C00" /></View>
-            <View style={styles.reportCopy}>
-              <ThemedText type="smallBold">Spending reports</ThemedText>
-              <ThemedText themeColor="textSecondary" style={styles.reportText}>See where your money goes</ThemedText>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#68756F" />
-          </Pressable>
         </ScrollView>
         <ScreenNav />
+        <Modal
+          visible={notificationOpen}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          onRequestClose={() => setNotificationOpen(false)}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setNotificationOpen(false)}>
+            <Pressable style={[styles.notificationCard, { backgroundColor: theme.backgroundElement }]} onPress={(event) => event.stopPropagation()}>
+              <View style={styles.notificationHeader}>
+                <View style={[styles.alertIcon, monthlySummary.overspent ? styles.warningIcon : styles.safeIcon]}>
+                  <Ionicons
+                    name={monthlySummary.overspent ? 'warning-outline' : 'checkmark-circle-outline'}
+                    size={26}
+                    color={monthlySummary.overspent ? theme.expense : theme.success}
+                  />
+                </View>
+                <View style={styles.notificationTitleCopy}>
+                  <ThemedText type="smallBold" style={styles.notificationTitle}>
+                    {monthlySummary.overspent ? 'Spending needs attention' : 'You’re on track'}
+                  </ThemedText>
+                  <ThemedText themeColor="textSecondary" style={styles.notificationSubtitle}>This month’s money summary</ThemedText>
+                </View>
+                <Pressable style={styles.modalClose} onPress={() => setNotificationOpen(false)} accessibilityLabel="Close notification">
+                  <Ionicons name="close" size={21} color="#68756F" />
+                </Pressable>
+              </View>
+
+              <ThemedText style={styles.notificationMessage}>
+                {monthlySummary.overspent
+                  ? `You spent ${currency(monthlySummary.expense - monthlySummary.income)} more than you earned. Review your spending to get back on track.`
+                  : 'Your income is covering your expenses. Keep up the good work!'}
+              </ThemedText>
+
+              <View style={styles.notificationFigures}>
+                <NotificationFigure label="Income" value={monthlySummary.income} color={theme.success} />
+                <View style={styles.figureDivider} />
+                <NotificationFigure label="Expenses" value={monthlySummary.expense} color={theme.expense} />
+              </View>
+
+              <Pressable
+                style={[styles.viewReportButton, { backgroundColor: theme.primary }]}
+                onPress={() => {
+                  setNotificationOpen(false);
+                  router.push('/analytics' as never);
+                }}>
+                <ThemedText type="smallBold" style={styles.viewReportText}>View spending report</ThemedText>
+                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+              </Pressable>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </SafeAreaView>
     </ThemedView>
   );
 }
 
+function getSriLankaGreeting() {
+  try {
+    const hour = Number(
+      new Intl.DateTimeFormat('en-GB', {
+        hour: '2-digit',
+        hour12: false,
+        timeZone: 'Asia/Colombo',
+      }).format(new Date())
+    ) % 24;
+
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  } catch {
+    // Sri Lanka Standard Time is UTC+05:30 and does not observe daylight saving.
+    const now = new Date();
+    const sriLankaHour = (now.getUTCHours() + 5 + Math.floor((now.getUTCMinutes() + 30) / 60)) % 24;
+    if (sriLankaHour < 12) return 'Good Morning';
+    if (sriLankaHour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+}
+
+function getSriLankaMonth() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Colombo',
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === 'year')?.value;
+  const month = parts.find((part) => part.type === 'month')?.value;
+  return `${year}-${month}`;
+}
+
 function SectionTitle({ title, action, onPress }: { title: string; action?: string; onPress?: () => void }) {
+  const { theme } = useAppTheme();
   return <View style={styles.sectionTitle}>
     <ThemedText type="smallBold" style={styles.sectionHeading}>{title}</ThemedText>
-    {action ? <Pressable onPress={onPress}><ThemedText style={styles.seeAll}>{action}</ThemedText></Pressable> : null}
+    {action ? <Pressable onPress={onPress}><ThemedText style={[styles.seeAll, { color: theme.primary }]}>{action}</ThemedText></Pressable> : null}
+  </View>;
+}
+
+function NotificationFigure({ label, value, color }: { label: string; value: number; color: string }) {
+  const { formatCurrency: currency } = useAppTheme();
+  return <View style={styles.figure}>
+    <ThemedText themeColor="textSecondary" style={styles.figureLabel}>{label}</ThemedText>
+    <ThemedText type="smallBold" style={[styles.figureValue, { color }]}>{currency(value)}</ThemedText>
   </View>;
 }
 
 function TransactionRow({ item, last }: { item: Transaction; last: boolean }) {
+  const { formatCurrency: currency, theme } = useAppTheme();
   const positive = item.type === 'income';
   return <View style={[styles.transactionRow, !last && styles.rowBorder]}>
     <View style={[styles.transactionIcon, { backgroundColor: positive ? '#E3F4E7' : '#FFE6DF' }]}>
-      <Ionicons name={positive ? 'cash-outline' : 'cart-outline'} size={21} color={positive ? '#2E7D32' : '#F57C00'} />
+      <Ionicons name={positive ? 'cash-outline' : 'cart-outline'} size={21} color={positive ? theme.success : theme.secondary} />
     </View>
     <View style={styles.transactionCopy}>
       <ThemedText type="smallBold">{item.category}</ThemedText>
       <ThemedText themeColor="textSecondary" style={styles.transactionDate}>{item.transactionDate}</ThemedText>
     </View>
-    <ThemedText type="smallBold" style={{ color: positive ? '#2E7D32' : '#D32F2F' }}>
+    <ThemedText type="smallBold" style={{ color: positive ? theme.success : theme.expense }}>
       {positive ? '+' : '-'} {currency(item.amount)}
     </ThemedText>
   </View>;
@@ -151,6 +282,19 @@ const styles = StyleSheet.create({
   greeting: { color: '#FFFFFF', fontSize: 14 }, name: { color: '#FFFFFF', fontSize: 22, lineHeight: 29 },
   notification: { width: 42, height: 42, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' },
   notificationDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#F57C00', position: 'absolute', right: 8, top: 7 },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(16, 31, 24, 0.48)', justifyContent: 'center', paddingHorizontal: 24 },
+  notificationCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, gap: 17, shadowColor: '#123D2B', shadowOpacity: 0.2, shadowRadius: 20, elevation: 12 },
+  notificationHeader: { flexDirection: 'row', alignItems: 'center' },
+  alertIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  warningIcon: { backgroundColor: '#FFE8E5' }, safeIcon: { backgroundColor: '#E3F4E7' },
+  notificationTitleCopy: { flex: 1, paddingHorizontal: 11 }, notificationTitle: { fontSize: 16 },
+  notificationSubtitle: { fontSize: 11, lineHeight: 16 }, modalClose: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  notificationMessage: { fontSize: 14, lineHeight: 21, color: '#44504A' },
+  notificationFigures: { flexDirection: 'row', backgroundColor: '#F7F8FA', borderRadius: 16, padding: 14 },
+  figure: { flex: 1 }, figureLabel: { fontSize: 11, marginBottom: 4 }, figureValue: { fontSize: 14 },
+  figureDivider: { width: 1, backgroundColor: '#DDE5E1', marginHorizontal: 12 },
+  viewReportButton: { minHeight: 48, borderRadius: 14, backgroundColor: '#0F9D58', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  viewReportText: { color: '#FFFFFF' },
   balanceLabel: { color: '#DDF5E8', fontSize: 13 }, balance: { color: '#FFFFFF', fontSize: 29, lineHeight: 38, fontWeight: '800', marginVertical: 2 },
   trendRow: { flexDirection: 'row', alignItems: 'center', gap: 5 }, trendText: { color: '#E5F7ED', fontSize: 12 },
   summaryCard: { marginTop: -42, marginHorizontal: 12, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16, flexDirection: 'row', elevation: 5, shadowColor: '#123D2B', shadowOpacity: 0.12, shadowRadius: 10 },
@@ -165,7 +309,4 @@ const styles = StyleSheet.create({
   transactionIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   transactionCopy: { flex: 1, paddingHorizontal: 11 }, transactionDate: { fontSize: 11, lineHeight: 16 },
   empty: { alignItems: 'center', padding: 26, gap: 5 }, center: { textAlign: 'center', fontSize: 13 },
-  reportCard: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 14, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ECE9DF' },
-  reportIcon: { width: 45, height: 45, borderRadius: 15, backgroundColor: '#FFF0DC', alignItems: 'center', justifyContent: 'center' },
-  reportCopy: { flex: 1, paddingHorizontal: 12 }, reportText: { fontSize: 12 },
 });

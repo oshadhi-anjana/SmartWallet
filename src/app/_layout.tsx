@@ -6,10 +6,11 @@ import {
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
-import { useColorScheme } from 'react-native';
 import { onAuthStateChanged } from 'firebase/auth';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { AppThemeProvider, useAppTheme } from '@/components/app-theme-provider';
+import { BiometricGate } from '@/components/biometric-gate';
 import { auth } from '@/services/firebase';
 import { initializeDatabase } from '../database/database';
 import { useSync } from '../hooks/useSync';
@@ -43,6 +44,14 @@ function AuthGuard() {
 
     if (!isSignedIn && !isPublicRoute) {
       router.replace('/login');
+      return;
+    }
+
+    // Firebase restores its persisted React Native session without requiring
+    // the network. Send returning users to their local wallet, where the
+    // biometric gate confirms identity before showing financial data.
+    if (isSignedIn && isPublicRoute) {
+      router.replace('/dashboard');
     }
   }, [isReady, isSignedIn, router, segments]);
 
@@ -50,18 +59,32 @@ function AuthGuard() {
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   useEffect(() => {
     initializeDatabase().catch((error) => {
       console.error('Database initialization failed:', error);
     });
   }, []);
 
+  return <AppThemeProvider><AppShell /></AppThemeProvider>;
+}
+
+function AppShell() {
+  const { theme } = useAppTheme();
+  const navigationTheme = {
+    ...(theme.isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(theme.isDark ? DarkTheme.colors : DefaultTheme.colors),
+      primary: theme.primary,
+      background: theme.background,
+      card: theme.backgroundElement,
+      text: theme.text,
+      border: theme.border,
+      notification: theme.secondary,
+    },
+  };
+
   return (
-    <ThemeProvider
-      value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
-    >
+    <ThemeProvider value={navigationTheme}>
       <SyncBridge />
       <AuthGuard />
 
@@ -77,12 +100,12 @@ export default function RootLayout() {
 
         <Stack.Screen
           name="login"
-          options={{ title: 'Login' }}
+          options={{ title: 'SmartWallet' }}
         />
 
         <Stack.Screen
           name="register"
-          options={{ title: 'Create Account' }}
+          options={{ title: 'SmartWallet' }}
         />
 
         <Stack.Screen
@@ -92,11 +115,34 @@ export default function RootLayout() {
 
         <Stack.Screen
           name="add-transaction"
-          options={{ title: 'Add Transaction' }}
+          options={{ title: 'SmartWallet' }}
+        />
+
+        <Stack.Screen
+          name="analytics"
+          options={{ title: 'SmartWallet' }}
+        />
+         <Stack.Screen
+          name="transactions"
+          options={{ title: 'SmartWallet' }}
+        />
+        <Stack.Screen
+          name="budget"
+          options={{ title: 'SmartWallet' }}
+        />
+        <Stack.Screen
+          name="savings"
+          options={{ title: 'SmartWallet' }}
+        />
+          <Stack.Screen
+          name="profile"
+          options={{ title: 'SmartWallet' }}
         />
       </Stack>
+      
 
       <AnimatedSplashOverlay />
+      <BiometricGate />
     </ThemeProvider>
   );
 }

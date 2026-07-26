@@ -1,8 +1,8 @@
-import { Transaction } from '../models/Transaction';
-import { getDatabase } from './database';
+﻿import { Transaction } from '../models/Transaction';
+import { getInitializedDatabase } from './database';
 
 export async function insertTransaction(transaction: Transaction) {
-  const db = await getDatabase();
+  const db = await getInitializedDatabase();
 
   await db.runAsync(
     `INSERT OR REPLACE INTO transactions
@@ -35,7 +35,7 @@ export async function insertTransaction(transaction: Transaction) {
 }
 
 export async function getTransactions(userId: string) {
-  const db = await getDatabase();
+  const db = await getInitializedDatabase();
 
   return db.getAllAsync<Transaction>(
     `SELECT
@@ -52,13 +52,13 @@ export async function getTransactions(userId: string) {
       updated_at AS updatedAt
     FROM transactions
     WHERE user_id = ?
-    ORDER BY transaction_date DESC`,
+    ORDER BY transaction_date DESC, created_at DESC`,
     userId
   );
 }
 
 export async function getTransaction(id: string) {
-  const db = await getDatabase();
+  const db = await getInitializedDatabase();
   return db.getFirstAsync<Transaction>(
     `SELECT id, user_id AS userId, type, amount, category, description,
       transaction_date AS transactionDate, receipt_uri AS receiptUri,
@@ -69,12 +69,12 @@ export async function getTransaction(id: string) {
 }
 
 export async function deleteTransaction(id: string) {
-  const db = await getDatabase();
+  const db = await getInitializedDatabase();
   await db.runAsync('DELETE FROM transactions WHERE id = ?', id);
 }
 
 export async function getPendingTransactions() {
-  const db = await getDatabase();
+  const db = await getInitializedDatabase();
 
   return db.getAllAsync<Transaction>(
     `SELECT
@@ -95,7 +95,7 @@ export async function getPendingTransactions() {
 }
 
 export async function updateTransactionSyncStatus(id: string, syncStatus: Transaction['syncStatus']) {
-  const db = await getDatabase();
+  const db = await getInitializedDatabase();
 
   await db.runAsync(
     `UPDATE transactions

@@ -1,9 +1,11 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Image,
+    KeyboardAvoidingView,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -13,17 +15,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useAppTheme } from '@/components/app-theme-provider';
 import { DateField } from '@/components/date-field';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { getTransaction, insertTransaction } from '@/database/transactionQueries';
 import { Transaction } from '@/models/Transaction';
 import { auth } from '@/services/firebase';
+import { refreshWalletData } from '@/services/syncService';
 import { createId } from '@/utils/id';
 
 const categoryOptions = ['Food', 'Transport', 'Bills', 'Shopping', 'Salary', 'Freelance', 'Entertainment', 'Health'];
 
 export default function AddTransactionScreen() {
   const router = useRouter();
+  const { theme, currency, convertFromBase, convertToBase, exchangeRate } = useAppTheme();
+  const scrollRef = useRef<ScrollView>(null);
   const { id } = useLocalSearchParams<{ id?: string }>();
   const [type, setType] = useState<Transaction['type']>('expense');
   const [amount, setAmount] = useState('');
@@ -39,7 +45,7 @@ export default function AddTransactionScreen() {
     getTransaction(id).then((item) => {
       if (!item) return;
       setType(item.type);
-      setAmount(String(item.amount));
+      setAmount(String(Number(convertFromBase(item.amount).toFixed(2))));
       setCategory(item.category);
       setTransactionDate(item.transactionDate);
       setDescription(item.description ?? '');
@@ -90,6 +96,10 @@ export default function AddTransactionScreen() {
       setError('Enter a valid amount.');
       return;
     }
+    if (exchangeRate === null) {
+      setError(`The ${currency} exchange rate is unavailable. Connect to the internet and try again.`);
+      return;
+    }
 
     setLoading(true);
 
@@ -100,7 +110,7 @@ export default function AddTransactionScreen() {
         id: existing?.id ?? createId(),
         userId: auth.currentUser?.uid ?? 'local-user',
         type,
-        amount: parsedAmount,
+        amount: convertToBase(parsedAmount),
         category,
         description: description.trim() || undefined,
         transactionDate,
@@ -111,6 +121,9 @@ export default function AddTransactionScreen() {
       };
 
       await insertTransaction(transaction);
+      refreshWalletData(transaction.userId).catch((syncError) => {
+        console.info('Transaction will sync automatically when online.', syncError);
+      });
       router.replace('/transactions' as never);
     } catch (saveError) {
       console.error('Failed to save transaction', saveError);
@@ -123,7 +136,17 @@ export default function AddTransactionScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.content}>
+        <KeyboardAvoidingView
+          style={styles.keyboardView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}>
+          <ScrollView
+            ref={scrollRef}
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            automaticallyAdjustKeyboardInsets
+            showsVerticalScrollIndicator={false}>
           <ThemedView type="backgroundElement" style={styles.card}>
             <ThemedText type="subtitle">{id ? 'Edit transaction' : 'Add transaction'}</ThemedText>
             <ThemedText themeColor="textSecondary">
@@ -133,14 +156,14 @@ export default function AddTransactionScreen() {
             <ThemedText type="smallBold">Type</ThemedText>
             <ThemedView style={styles.typeRow}>
               <Pressable
-                style={[styles.typeButton, type === 'income' && styles.typeButtonActive]}
+                style={[styles.typeButton, { borderColor: theme.primary }, type === 'income' && styles.typeButtonActive, type === 'income' && { backgroundColor: theme.primary }]}
                 onPress={() => setType('income')}>
                 <ThemedText type="smallBold" style={type === 'income' ? styles.activeText : undefined}>
                   Income
                 </ThemedText>
               </Pressable>
               <Pressable
-                style={[styles.typeButton, type === 'expense' && styles.typeButtonActive]}
+                style={[styles.typeButton, { borderColor: theme.primary }, type === 'expense' && styles.typeButtonActive, type === 'expense' && { backgroundColor: theme.primary }]}
                 onPress={() => setType('expense')}>
                 <ThemedText type="smallBold" style={type === 'expense' ? styles.activeText : undefined}>
                   Expense
@@ -148,7 +171,7 @@ export default function AddTransactionScreen() {
               </Pressable>
             </ThemedView>
 
-            <ThemedText type="smallBold">Amount</ThemedText>
+            <ThemedText type="smallBold">Amount ({currency})</ThemedText>
             <TextInput
               style={styles.input}
               value={amount}
@@ -164,7 +187,7 @@ export default function AddTransactionScreen() {
                   <Pressable
                     key={option}
                     onPress={() => setCategory(option)}
-                    style={[styles.categoryChip, category === option && styles.typeButtonActive]}>
+                    style={[styles.categoryChip, { borderColor: theme.accent }, category === option && styles.typeButtonActive, category === option && { backgroundColor: theme.primary }]}>
                     <ThemedText type="small" style={category === option ? styles.activeText : undefined}>{option}</ThemedText>
                   </Pressable>
                 ))}
@@ -181,6 +204,7 @@ export default function AddTransactionScreen() {
               onChangeText={setDescription}
               placeholder="What was this for?"
               multiline
+              onFocus={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 250)}
             />
 
             <ThemedView style={styles.receiptActions}>
@@ -195,11 +219,12 @@ export default function AddTransactionScreen() {
 
             {error ? <ThemedText themeColor="textSecondary" style={styles.errorText}>{error}</ThemedText> : null}
 
-            <Pressable style={styles.primaryButton} onPress={handleSave} disabled={loading}>
+            <Pressable style={[styles.primaryButton, { backgroundColor: theme.primary }]} onPress={handleSave} disabled={loading}>
               {loading ? <ActivityIndicator color="#ffffff" /> : <ThemedText type="smallBold" style={styles.buttonText}>{id ? 'Update transaction' : 'Save transaction'}</ThemedText>}
             </Pressable>
           </ThemedView>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -209,6 +234,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  keyboardView: { flex: 1 },
   safeArea: {
     flex: 1,
     paddingHorizontal: Spacing.four,

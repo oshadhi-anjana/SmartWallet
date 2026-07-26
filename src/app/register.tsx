@@ -1,9 +1,10 @@
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { useAppTheme } from '@/components/app-theme-provider';
 import { ThemedView } from '@/components/themed-view';
 import { PasswordField } from '@/components/password-field';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -11,6 +12,7 @@ import { registerUser } from '../services/authService';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { theme } = useAppTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -63,9 +65,15 @@ export default function RegisterScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView type="backgroundElement" style={styles.card}>
-          <ThemedText type="subtitle">Create account</ThemedText>
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <SafeAreaView style={styles.safeArea}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            automaticallyAdjustKeyboardInsets
+            showsVerticalScrollIndicator={false}>
+            <ThemedView type="backgroundElement" style={styles.card}>
+          <ThemedText type="subtitle">Create Account</ThemedText>
           <ThemedText themeColor="textSecondary">
             Start building smarter money habits with secure, simple expense tracking.
           </ThemedText>
@@ -93,13 +101,15 @@ export default function RegisterScreen() {
             onChangeText={setConfirmPassword}
           />
 
-          <Pressable style={styles.primaryButton} onPress={handleRegister} disabled={isLoading}>
+          <Pressable style={[styles.primaryButton, { backgroundColor: theme.primary }]} onPress={handleRegister} disabled={isLoading}>
             {isLoading ? <ActivityIndicator color="#fff" /> : <ThemedText type="smallBold" style={styles.buttonText}>Register</ThemedText>}
           </Pressable>
 
           <Link href="/login" style={styles.link}>Already have an account? Login</Link>
-        </ThemedView>
-      </SafeAreaView>
+            </ThemedView>
+          </ScrollView>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </ThemedView>
   );
 }
@@ -115,8 +125,8 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
     width: '100%',
-    justifyContent: 'center',
   },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingVertical: Spacing.four },
   card: {
     borderRadius: Spacing.three,
     padding: Spacing.four,

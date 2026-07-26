@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useAppTheme } from './app-theme-provider';
 
 interface BudgetProgressCardProps {
   /** The label shown for the budget category or goal. */
@@ -20,6 +21,7 @@ export default function BudgetProgressCard({
   onPress,
   onBudgetExceeded,
 }: BudgetProgressCardProps) {
+  const { formatCurrency, theme } = useAppTheme();
   const percentage = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
   const remaining = Math.max(budget - spent, 0);
   const exceeded = spent > budget;
@@ -29,20 +31,25 @@ export default function BudgetProgressCard({
   }
 
   return (
-    <Pressable style={styles.container} onPress={onPress}>
+    <Pressable style={[styles.container, { backgroundColor: theme.backgroundElement }]} onPress={onPress}>
       <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
-        <Text>{percentage.toFixed(0)}%</Text>
+        <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+        <Text style={{ color: theme.text }}>{percentage.toFixed(0)}%</Text>
+      </View>
+
+      <View style={styles.allocatedRow}>
+        <Text style={styles.allocatedLabel}>Allocated budget</Text>
+        <Text style={[styles.allocatedValue, { color: theme.primary }]}>{formatCurrency(budget)}</Text>
       </View>
 
       <View style={styles.track}>
-        <View style={[styles.progress, { width: `${percentage}%` }]} />
+        <View style={[styles.progress, { width: `${percentage}%`, backgroundColor: theme.primary }]} />
       </View>
 
-      <Text>Spent: LKR {spent.toFixed(2)}</Text>
-      <Text>Remaining: LKR {remaining.toFixed(2)}</Text>
+      <Text style={{ color: theme.text }}>Spent: {formatCurrency(spent)}</Text>
+      <Text style={{ color: theme.text }}>Remaining: {formatCurrency(remaining)}</Text>
 
-      {exceeded ? <Text style={styles.warning}>Budget exceeded</Text> : null}
+      {exceeded ? <Text style={[styles.warning, { color: theme.expense }]}>Budget exceeded</Text> : null}
     </Pressable>
   );
 }
@@ -62,6 +69,21 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  allocatedRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  allocatedLabel: {
+    color: '#68756F',
+    fontSize: 12,
+  },
+  allocatedValue: {
+    color: '#0F9D58',
+    fontWeight: '700',
+    fontSize: 13,
   },
   track: {
     height: 10,
