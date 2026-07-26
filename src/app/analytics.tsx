@@ -13,6 +13,7 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { getTransactions } from '@/database/transactionQueries';
 import { Transaction } from '@/models/Transaction';
 import { auth } from '@/services/firebase';
+import { refreshWalletData } from '@/services/syncService';
 
 const colors = ['#F57C00', '#0F9D58', '#FFC107', '#D32F2F', '#2485A8'];
 const money = (value: number) => `LKR ${value.toLocaleString('en-LK')}`;
@@ -25,7 +26,11 @@ export default function AnalyticsScreen() {
   const [reportDate, setReportDate] = useState(() => formatDate(getSriLankaToday()));
   const [showDatePicker, setShowDatePicker] = useState(false);
   useFocusEffect(useCallback(() => {
-    getTransactions(auth.currentUser?.uid ?? 'local-user').then(setTransactions);
+    const userId = auth.currentUser?.uid ?? 'local-user';
+    refreshWalletData(userId)
+      .then(() => getTransactions(userId))
+      .then(setTransactions)
+      .catch((error) => console.error('Unable to load analytics data', error));
   }, []));
 
   const selectedPeriod = useMemo(

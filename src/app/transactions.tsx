@@ -13,7 +13,7 @@ import { getTransactions } from '@/database/transactionQueries';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { Transaction } from '@/models/Transaction';
 import { auth } from '@/services/firebase';
-import { deleteTransactionEverywhere, syncPendingTransactions } from '@/services/syncService';
+import { deleteTransactionEverywhere, refreshWalletData, syncPendingTransactions } from '@/services/syncService';
 
 const money = (value: number) => `LKR ${value.toLocaleString('en-LK')}`;
 
@@ -31,7 +31,9 @@ export default function TransactionsScreen() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const load = useCallback(async () => {
-    setTransactions(await getTransactions(auth.currentUser?.uid ?? 'local-user'));
+    const userId = auth.currentUser?.uid ?? 'local-user';
+    await refreshWalletData(userId);
+    setTransactions(await getTransactions(userId));
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 

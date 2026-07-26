@@ -1,8 +1,9 @@
-import { deleteDoc, doc, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
 
 import {
     deleteTransaction,
     getPendingTransactions,
+    insertTransaction,
     markTransactionFailed,
     markTransactionSynced,
 } from '../database/transactionQueries';
@@ -11,14 +12,20 @@ import {
   deleteSavingsGoal,
   getPendingBudgets,
   getPendingSavingsGoals,
+  saveBudget,
+  saveSavingsGoal,
   updateBudgetSyncStatus,
   updateSavingsGoalSyncStatus,
 } from '../database/walletQueries';
+import { Budget } from '../models/Budget';
+import { SavingsGoal } from '../models/SavingsGoal';
+import { Transaction } from '../models/Transaction';
 import { firestore } from './firebase';
 
 let syncInProgress = false;
 let budgetSyncInProgress = false;
 let savingsSyncInProgress = false;
+let refreshPromise: Promise<void> | null = null;
 
 export async function deleteTransactionEverywhere(userId: string, transactionId: string) {
   if (userId !== 'local-user') {
@@ -96,6 +103,69 @@ export async function syncPendingSavingsGoals() {
   } finally {
     savingsSyncInProgress = false;
   }
+}
+
+export async function pullRemoteWalletData(userId: string) {
+  if (userId === 'local-user') return;
+
+  try {
+    const [transactionSnapshot, budgetSnapshot, savingsSnapshot] = await Promise.all([
+      getDocs(collection(firestore, 'users', userId, 'transactions')),
+      getDocs(collection(firestore, 'users', userId, 'budgets')),
+      getDocs(collection(firestore, 'users', userId, 'savingsGoals')),
+    ]);
+
+    await Promise.all([
+      ...transactionSnapshot.docs.map((snapshot) => {
+        const remote = snapshot.data() as Transaction;
+        return insertTransaction({
+          ...remote,
+          id: snapshot.id,
+          userId,
+          syncStatus: 'synced',
+        });
+      }),
+      ...budgetSnapshot.docs.map((snapshot) => {
+        const remote = snapshot.data() as Budget;
+        return saveBudget({
+          ...remote,
+          id: snapshot.id,
+          userId,
+          syncStatus: 'synced',
+        });
+      }),
+      ...savingsSnapshot.docs.map((snapshot) => {
+        const remote = snapshot.data() as SavingsGoal;
+        return saveSavingsGoal({
+          ...remote,
+          id: snapshot.id,
+          userId,
+          syncStatus: 'synced',
+        });
+      }),
+    ]);
+  } catch (error) {
+    // Offline users continue using SQLite; the next online refresh will retry.
+    console.info('Cloud wallet data is unavailable. Using local records.', error);
+  }
+}
+
+export async function refreshWalletData(userId: string) {
+  if (userId === 'local-user') return;
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    await Promise.all([
+      syncPendingTransactions(),
+      syncPendingBudgets(),
+      syncPendingSavingsGoals(),
+    ]);
+    await pullRemoteWalletData(userId);
+  })().finally(() => {
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
 }
 
 export async function syncPendingTransactions() {

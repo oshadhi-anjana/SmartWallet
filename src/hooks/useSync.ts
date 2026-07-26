@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
-import { syncPendingBudgets, syncPendingSavingsGoals, syncPendingTransactions } from '../services/syncService';
+import { refreshWalletData } from '../services/syncService';
+import { auth } from '../services/firebase';
 import { useNetworkStatus } from './useNetworkStatus';
 
 export function useSync() {
@@ -8,7 +9,7 @@ export function useSync() {
 
   useEffect(() => {
     if (isOnline) {
-      Promise.all([syncPendingTransactions(), syncPendingBudgets(), syncPendingSavingsGoals()]).catch((error) => {
+      refreshWalletData(auth.currentUser?.uid ?? 'local-user').catch((error) => {
         console.error('Synchronization failed:', error);
       });
     }

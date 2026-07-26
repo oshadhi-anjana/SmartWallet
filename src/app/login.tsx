@@ -105,7 +105,7 @@ export default function LoginScreen() {
         </Pressable>
 
         <View style={styles.form}>
-          <ThemedText type="subtitle" style={styles.heading}>Welcome Back</ThemedText>
+          <ThemedText type="subtitle" style={styles.heading}>Login</ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.subheading}>Sign in to continue</ThemedText>
 
           {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}

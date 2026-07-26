@@ -13,6 +13,7 @@ import { getTransactions } from '@/database/transactionQueries';
 import { Transaction } from '@/models/Transaction';
 import { getCurrentUserName } from '@/services/authService';
 import { auth } from '@/services/firebase';
+import { refreshWalletData } from '@/services/syncService';
 
 const currency = (value: number) => `LKR ${value.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -32,6 +33,7 @@ export default function DashboardScreen() {
     async function load() {
       try {
         const userId = auth.currentUser?.uid ?? 'local-user';
+        await refreshWalletData(userId);
         const [items, name] = await Promise.all([
           getTransactions(userId),
           getCurrentUserName(),

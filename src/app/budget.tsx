@@ -15,7 +15,7 @@ import { getBudgets, saveBudget } from '@/database/walletQueries';
 import { Budget } from '@/models/Budget';
 import { Transaction } from '@/models/Transaction';
 import { auth } from '@/services/firebase';
-import { deleteBudgetEverywhere, syncPendingBudgets } from '@/services/syncService';
+import { deleteBudgetEverywhere, refreshWalletData, syncPendingBudgets } from '@/services/syncService';
 import { createId } from '@/utils/id';
 
 const categories = ['Food', 'Transport', 'Bills', 'Shopping', 'Entertainment', 'Health'];
@@ -36,6 +36,7 @@ export default function BudgetScreen() {
   const userId = auth.currentUser?.uid ?? 'local-user';
 
   const load = useCallback(async () => {
+    await refreshWalletData(userId);
     const [saved, tx] = await Promise.all([getBudgets(userId), getTransactions(userId)]);
     setBudgets(saved);
     setTransactions(tx);

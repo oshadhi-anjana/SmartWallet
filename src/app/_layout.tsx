@@ -78,7 +78,7 @@ export default function RootLayout() {
 
         <Stack.Screen
           name="login"
-          options={{ title: 'Login' }}
+          options={{ title: 'SmartWallet' }}
         />
 
         <Stack.Screen

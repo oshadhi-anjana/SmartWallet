@@ -12,7 +12,7 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { getSavingsGoals, saveSavingsGoal } from '@/database/walletQueries';
 import { SavingsGoal } from '@/models/SavingsGoal';
 import { auth } from '@/services/firebase';
-import { deleteSavingsGoalEverywhere, syncPendingSavingsGoals } from '@/services/syncService';
+import { deleteSavingsGoalEverywhere, refreshWalletData, syncPendingSavingsGoals } from '@/services/syncService';
 import { createId } from '@/utils/id';
 
 const money = (value: number) => `LKR ${value.toLocaleString('en-LK', { minimumFractionDigits: 2 })}`;
@@ -30,7 +30,10 @@ export default function SavingsScreen() {
   const [isDeleting, setIsDeleting] = useState(false);
   const userId = auth.currentUser?.uid ?? 'local-user';
 
-  const load = useCallback(async () => setGoals(await getSavingsGoals(userId)), [userId]);
+  const load = useCallback(async () => {
+    await refreshWalletData(userId);
+    setGoals(await getSavingsGoals(userId));
+  }, [userId]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const totals = useMemo(() => ({
