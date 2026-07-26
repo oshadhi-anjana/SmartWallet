@@ -52,7 +52,7 @@ export async function getTransactions(userId: string) {
       updated_at AS updatedAt
     FROM transactions
     WHERE user_id = ?
-    ORDER BY transaction_date DESC`,
+    ORDER BY transaction_date DESC, created_at DESC`,
     userId
   );
 }

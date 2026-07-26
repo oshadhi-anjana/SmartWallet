@@ -65,7 +65,7 @@ export default function RegisterScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView type="backgroundElement" style={styles.card}>
-          <ThemedText type="subtitle">Create account</ThemedText>
+          <ThemedText type="subtitle">Create Account</ThemedText>
           <ThemedText themeColor="textSecondary">
             Start building smarter money habits with secure, simple expense tracking.
           </ThemedText>

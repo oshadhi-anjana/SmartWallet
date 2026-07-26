@@ -9,11 +9,11 @@ import { ScreenNav } from '@/components/screen-nav';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { deleteTransaction, getTransactions } from '@/database/transactionQueries';
+import { getTransactions } from '@/database/transactionQueries';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { Transaction } from '@/models/Transaction';
 import { auth } from '@/services/firebase';
-import { syncPendingTransactions } from '@/services/syncService';
+import { deleteTransactionEverywhere, syncPendingTransactions } from '@/services/syncService';
 
 const money = (value: number) => `LKR ${value.toLocaleString('en-LK')}`;
 
@@ -36,10 +36,25 @@ export default function TransactionsScreen() {
     try { await syncPendingTransactions(); await load(); } finally { setIsSyncing(false); }
   }
 
-  function remove(id: string) {
-    Alert.alert('Delete transaction?', 'This removes the local record from this device.', [
+  function remove(transaction: Transaction) {
+    Alert.alert('Delete transaction?', 'This permanently removes the transaction from your device and database.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => { await deleteTransaction(id); await load(); } },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteTransactionEverywhere(transaction.userId, transaction.id);
+            await load();
+          } catch (error) {
+            console.error('Failed to delete transaction', transaction.id, error);
+            Alert.alert(
+              'Unable to delete',
+              'The transaction could not be removed from the database. Check your internet connection and try again.'
+            );
+          }
+        },
+      },
     ]);
   }
 
@@ -72,7 +87,7 @@ export default function TransactionsScreen() {
           ) : visible.map((item) => {
             const income = item.type === 'income';
             return (
-              <Pressable key={item.id} style={styles.row} onPress={() => router.push({ pathname: '/add-transaction', params: { id: item.id } } as never)} onLongPress={() => remove(item.id)}>
+              <Pressable key={item.id} style={styles.row} onPress={() => router.push({ pathname: '/add-transaction', params: { id: item.id } } as never)} onLongPress={() => remove(item)}>
                 <View style={[styles.rowIcon, income ? styles.incomeIcon : styles.expenseIcon]}>
                   <Ionicons name={income ? 'cash-outline' : 'cart-outline'} size={21} color={income ? '#2E7D32' : '#F57C00'} />
                 </View>

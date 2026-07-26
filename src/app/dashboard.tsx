@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -19,6 +19,12 @@ export default function DashboardScreen() {
   const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
+  const [greeting, setGreeting] = useState(getSriLankaGreeting);
+
+  useEffect(() => {
+    const timer = setInterval(() => setGreeting(getSriLankaGreeting()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   useFocusEffect(useCallback(() => {
     async function load() {
@@ -33,7 +39,17 @@ export default function DashboardScreen() {
   const summary = useMemo(() => {
     const income = transactions.filter((item) => item.type === 'income').reduce((sum, item) => sum + item.amount, 0);
     const expense = transactions.filter((item) => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0);
-    return { income, expense, balance: income - expense, recent: transactions.slice(0, 4) };
+    const latestIncome = transactions.find((item) => item.type === 'income');
+    const latestExpense = transactions.find((item) => item.type === 'expense');
+    const recent = [latestIncome, latestExpense]
+      .filter((item): item is Transaction => Boolean(item))
+      .sort((a, b) => {
+        const aTime = new Date(`${a.transactionDate}T00:00:00`).getTime();
+        const bTime = new Date(`${b.transactionDate}T00:00:00`).getTime();
+        return bTime - aTime || b.createdAt.localeCompare(a.createdAt);
+      });
+
+    return { income, expense, balance: income - expense, recent };
   }, [transactions]);
 
   const firstName = auth.currentUser?.displayName?.split(' ')[0] || 'there';
@@ -51,7 +67,7 @@ export default function DashboardScreen() {
           <View style={styles.hero}>
             <View style={styles.heroTop}>
               <View>
-                <ThemedText style={styles.greeting}>Good Morning,</ThemedText>
+                <ThemedText style={styles.greeting}>{greeting},</ThemedText>
                 <ThemedText type="subtitle" style={styles.name}>{firstName} 👋</ThemedText>
               </View>
               <View style={styles.notification}>
@@ -117,6 +133,29 @@ export default function DashboardScreen() {
       </SafeAreaView>
     </ThemedView>
   );
+}
+
+function getSriLankaGreeting() {
+  try {
+    const hour = Number(
+      new Intl.DateTimeFormat('en-GB', {
+        hour: '2-digit',
+        hour12: false,
+        timeZone: 'Asia/Colombo',
+      }).format(new Date())
+    ) % 24;
+
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  } catch {
+    // Sri Lanka Standard Time is UTC+05:30 and does not observe daylight saving.
+    const now = new Date();
+    const sriLankaHour = (now.getUTCHours() + 5 + Math.floor((now.getUTCMinutes() + 30) / 60)) % 24;
+    if (sriLankaHour < 12) return 'Good Morning';
+    if (sriLankaHour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
 }
 
 function SectionTitle({ title, action, onPress }: { title: string; action?: string; onPress?: () => void }) {

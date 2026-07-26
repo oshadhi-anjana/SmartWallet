@@ -37,9 +37,13 @@ export default function LoginScreen() {
   }
 
   async function handleForgotPassword() {
+    setErrorMessage('');
     try {
       await requestPasswordReset(email);
-      Alert.alert('Check your inbox', 'A password reset link has been sent to your email address.');
+      Alert.alert(
+        'Check your inbox',
+        `If ${email.trim()} has a password account, Firebase has sent a reset link. Check your spam folder too.`
+      );
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Unable to send the reset email.');
     }

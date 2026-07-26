@@ -82,7 +82,7 @@ export default function RootLayout() {
 
         <Stack.Screen
           name="register"
-          options={{ title: 'Create Account' }}
+          options={{ title: 'SmartWallet' }}
         />
 
         <Stack.Screen
@@ -92,7 +92,7 @@ export default function RootLayout() {
 
         <Stack.Screen
           name="add-transaction"
-          options={{ title: 'Add Transaction' }}
+          options={{ title: 'SmartWallet' }}
         />
       </Stack>
 

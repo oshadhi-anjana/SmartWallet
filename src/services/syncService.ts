@@ -1,6 +1,7 @@
-import { doc, setDoc } from 'firebase/firestore';
+import { deleteDoc, doc, setDoc } from 'firebase/firestore';
 
 import {
+    deleteTransaction,
     getPendingTransactions,
     markTransactionFailed,
     markTransactionSynced,
@@ -8,6 +9,21 @@ import {
 import { firestore } from './firebase';
 
 let syncInProgress = false;
+
+export async function deleteTransactionEverywhere(userId: string, transactionId: string) {
+  if (userId !== 'local-user') {
+    const transactionRef = doc(
+      firestore,
+      'users',
+      userId,
+      'transactions',
+      transactionId
+    );
+    await deleteDoc(transactionRef);
+  }
+
+  await deleteTransaction(transactionId);
+}
 
 export async function syncPendingTransactions() {
   if (syncInProgress) {
