@@ -58,7 +58,9 @@ export default function ProfileScreen() {
 
           <Pressable style={styles.logout} onPress={async () => {
             await logoutUser();
-            router.dismissAll();
+            if (router.canDismiss()) {
+              router.dismissAll();
+            }
             router.replace('/login' as never);
           }}>
             <Ionicons name="log-out-outline" size={20} color="#D32F2F" />

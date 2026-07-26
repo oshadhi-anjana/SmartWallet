@@ -26,3 +26,8 @@ export async function initializeDatabase() {
   const db = await getDatabase();
   await db.execAsync('SELECT 1');
 }
+
+export async function getInitializedDatabase() {
+  await initializeDatabase();
+  return getDatabase();
+}
