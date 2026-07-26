@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { DateField } from '@/components/date-field';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { getTransaction, insertTransaction } from '@/database/transactionQueries';
 import { Transaction } from '@/models/Transaction';
@@ -171,12 +172,7 @@ export default function AddTransactionScreen() {
             </ScrollView>
 
             <ThemedText type="smallBold">Date</ThemedText>
-            <TextInput
-              style={styles.input}
-              value={transactionDate}
-              onChangeText={setTransactionDate}
-              placeholder="YYYY-MM-DD"
-            />
+            <DateField value={transactionDate} onChange={setTransactionDate} />
 
             <ThemedText type="smallBold">Description</ThemedText>
             <TextInput

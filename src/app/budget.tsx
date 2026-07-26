@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, TextInput } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import BudgetProgressCard from '@/components/budget-progress-card';
+import { DateField } from '@/components/date-field';
 import { ScreenNav } from '@/components/screen-nav';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -60,12 +61,11 @@ export default function BudgetScreen() {
   return (
     <ThemedView style={styles.container}><SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
-        <ScreenNav />
         <ThemedText type="subtitle">Monthly budgets</ThemedText>
         <ThemedText themeColor="textSecondary">Set category limits and see progress from your local expenses.</ThemedText>
         <ThemedView type="backgroundElement" style={styles.card}>
           <ThemedText type="smallBold">Month (YYYY-MM)</ThemedText>
-          <TextInput style={styles.input} value={month} onChangeText={setMonth} placeholder="2026-07" />
+          <DateField value={month} onChange={setMonth} mode="month" placeholder="Select month" />
           <ThemedText type="smallBold">Category</ThemedText>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <ThemedView style={styles.chips}>{categories.map((item) => (
@@ -88,6 +88,7 @@ export default function BudgetScreen() {
             ])}><ThemedText style={styles.delete}>Delete budget</ThemedText></Pressable>
           </ThemedView>)}
       </ScrollView>
+      <ScreenNav />
     </SafeAreaView></ThemedView>
   );
 }

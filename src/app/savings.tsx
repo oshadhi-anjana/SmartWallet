@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScreenNav } from '@/components/screen-nav';
+import { DateField } from '@/components/date-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -41,14 +42,13 @@ export default function SavingsScreen() {
 
   return <ThemedView style={styles.container}><SafeAreaView style={styles.safeArea}>
     <ScrollView contentContainerStyle={styles.content}>
-      <ScreenNav />
       <ThemedText type="subtitle">Savings goals</ThemedText>
       <ThemedText themeColor="textSecondary">Create goals and track progress offline.</ThemedText>
       <ThemedView type="backgroundElement" style={styles.card}>
         <TextInput style={styles.input} placeholder="Goal name" value={title} onChangeText={setTitle} />
         <TextInput style={styles.input} placeholder="Target amount (LKR)" keyboardType="decimal-pad" value={targetAmount} onChangeText={setTargetAmount} />
         <TextInput style={styles.input} placeholder="Already saved (optional)" keyboardType="decimal-pad" value={currentAmount} onChangeText={setCurrentAmount} />
-        <TextInput style={styles.input} placeholder="Target date YYYY-MM-DD (optional)" value={targetDate} onChangeText={setTargetDate} />
+        <DateField value={targetDate} onChange={setTargetDate} placeholder="Select target date (optional)" />
         {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
         <Pressable style={styles.button} onPress={addGoal}><ThemedText type="smallBold" style={styles.white}>Create goal</ThemedText></Pressable>
       </ThemedView>
@@ -67,6 +67,7 @@ export default function SavingsScreen() {
           </ThemedView>;
         })}
     </ScrollView>
+    <ScreenNav />
   </SafeAreaView></ThemedView>;
 }
 

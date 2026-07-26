@@ -1,11 +1,16 @@
 import { Link } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 export default function WelcomeScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>SmartWallet</Text>
-      <Text style={styles.subtitle}>Manage your money anywhere, even when you are offline.</Text>
+      <Image
+        source={require('../../assets/images/smartwallet-logo.png')}
+        style={styles.logo}
+        resizeMode="contain"
+        accessibilityLabel="SmartWallet - Manage Money Smarter"
+      />
+      {/* <Text style={styles.subtitle}>Manage your money anywhere, even when you are offline.</Text> */}
 
       <Link href="/login" style={styles.button}>
         Login
@@ -25,11 +30,12 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#F7F8FA',
   },
-  title: {
-    fontSize: 34,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 12,
+  logo: {
+    width: '100%',
+    maxWidth: 420,
+    height: 330,
+    alignSelf: 'center',
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
