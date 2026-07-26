@@ -81,14 +81,14 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#d2d9e2',
+    borderColor: '#FFC107',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     backgroundColor: '#fff',
   },
   primaryButton: {
-    backgroundColor: '#3c87f7',
+    backgroundColor: '#0F9D58',
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: 999,
@@ -99,11 +99,11 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   error: {
-    color: '#c0392b',
+    color: '#D32F2F',
     fontSize: 13,
   },
   link: {
-    color: '#3c87f7',
+    color: '#F57C00',
     textAlign: 'center',
     marginTop: Spacing.one,
   },

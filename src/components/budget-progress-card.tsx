@@ -65,18 +65,18 @@ const styles = StyleSheet.create({
   },
   track: {
     height: 10,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#F7F8FA',
     borderRadius: 10,
     overflow: 'hidden',
     marginBottom: 12,
   },
   progress: {
     height: '100%',
-    backgroundColor: '#1E6F5C',
+    backgroundColor: '#0F9D58',
   },
   warning: {
     marginTop: 8,
-    color: '#B91C1C',
+    color: '#D32F2F',
     fontWeight: '600',
   },
 });

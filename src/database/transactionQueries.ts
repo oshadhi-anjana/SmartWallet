@@ -57,6 +57,22 @@ export async function getTransactions(userId: string) {
   );
 }
 
+export async function getTransaction(id: string) {
+  const db = await getDatabase();
+  return db.getFirstAsync<Transaction>(
+    `SELECT id, user_id AS userId, type, amount, category, description,
+      transaction_date AS transactionDate, receipt_uri AS receiptUri,
+      sync_status AS syncStatus, created_at AS createdAt, updated_at AS updatedAt
+     FROM transactions WHERE id = ?`,
+    id
+  );
+}
+
+export async function deleteTransaction(id: string) {
+  const db = await getDatabase();
+  await db.runAsync('DELETE FROM transactions WHERE id = ?', id);
+}
+
 export async function getPendingTransactions() {
   const db = await getDatabase();
 

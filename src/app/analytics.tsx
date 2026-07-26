@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
+import { ScreenNav } from '@/components/screen-nav';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -12,7 +14,7 @@ import { auth } from '@/services/firebase';
 export default function AnalyticsScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  useMemo(() => {
+  useFocusEffect(useCallback(() => {
     async function loadTransactions() {
       const userId = auth.currentUser?.uid ?? 'local-user';
       const result = await getTransactions(userId);
@@ -20,7 +22,7 @@ export default function AnalyticsScreen() {
     }
 
     loadTransactions();
-  }, []);
+  }, []));
 
   const analytics = useMemo(() => {
     const expenseByCategory = transactions
@@ -51,6 +53,7 @@ export default function AnalyticsScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
+          <ScreenNav />
           <ThemedText type="subtitle">Analytics</ThemedText>
           <ThemedText themeColor="textSecondary">Insights derived from your local transaction history.</ThemedText>
 

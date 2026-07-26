@@ -1,9 +1,11 @@
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
+import { ScreenNav } from '@/components/screen-nav';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -17,7 +19,7 @@ export default function DashboardScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     async function loadData() {
       const userId = auth.currentUser?.uid ?? 'local-user';
       const [localTransactions, pendingTransactions] = await Promise.all([
@@ -30,7 +32,7 @@ export default function DashboardScreen() {
     }
 
     loadData();
-  }, []);
+  }, []));
 
   const summary = useMemo(() => {
     const totalIncome = transactions
@@ -64,12 +66,13 @@ export default function DashboardScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
+          <ScreenNav />
           <ThemedText type="subtitle">Dashboard</ThemedText>
           <ThemedText themeColor="textSecondary">Your offline-first money snapshot.</ThemedText>
 
           <ThemedView type="backgroundElement" style={styles.card}>
             <ThemedText type="smallBold">Current balance</ThemedText>
-            <ThemedText type="title">${summary.balance.toFixed(2)}</ThemedText>
+            <ThemedText type="title">LKR {summary.balance.toFixed(2)}</ThemedText>
             <ThemedText themeColor="textSecondary">
               Income ${summary.totalIncome.toFixed(2)} • Expenses ${summary.totalExpense.toFixed(2)}
             </ThemedText>
@@ -78,18 +81,18 @@ export default function DashboardScreen() {
           <ThemedView style={styles.grid}>
             <ThemedView type="backgroundElement" style={styles.metricCard}>
               <ThemedText type="smallBold">Income</ThemedText>
-              <ThemedText type="subtitle">${summary.totalIncome.toFixed(2)}</ThemedText>
+              <ThemedText type="subtitle">LKR {summary.totalIncome.toFixed(2)}</ThemedText>
             </ThemedView>
             <ThemedView type="backgroundElement" style={styles.metricCard}>
               <ThemedText type="smallBold">Expenses</ThemedText>
-              <ThemedText type="subtitle">${summary.totalExpense.toFixed(2)}</ThemedText>
+              <ThemedText type="subtitle">LKR {summary.totalExpense.toFixed(2)}</ThemedText>
             </ThemedView>
           </ThemedView>
 
           <ThemedView type="backgroundElement" style={styles.card}>
             <ThemedText type="smallBold">Monthly budget progress</ThemedText>
             <ThemedText themeColor="textSecondary">{summary.budgetProgress.toFixed(0)}% of your monthly budget used</ThemedText>
-            <ThemedText type="smallBold">${summary.totalExpense.toFixed(2)} / $2000</ThemedText>
+            <ThemedText type="smallBold">LKR {summary.totalExpense.toFixed(2)} / LKR 2000</ThemedText>
           </ThemedView>
 
           <ThemedView type="backgroundElement" style={styles.card}>
@@ -114,7 +117,7 @@ export default function DashboardScreen() {
               Object.entries(summary.categoryBreakdown).map(([category, value]) => (
                 <ThemedView key={category} style={styles.rowItem}>
                   <ThemedText>{category}</ThemedText>
-                  <ThemedText themeColor="textSecondary">${value.toFixed(2)}</ThemedText>
+                  <ThemedText themeColor="textSecondary">LKR {value.toFixed(2)}</ThemedText>
                 </ThemedView>
               ))
             )}
@@ -172,7 +175,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.one,
   },
   primaryButton: {
-    backgroundColor: '#3c87f7',
+    backgroundColor: '#0F9D58',
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: 999,

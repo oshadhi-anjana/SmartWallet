@@ -2,6 +2,7 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signOut,
+    updateProfile,
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 
@@ -9,6 +10,7 @@ import { auth, db } from './firebase';
 
 export async function registerUser(email: string, password: string, name?: string) {
   const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
+  await updateProfile(result.user, { displayName: name?.trim() || null });
 
   await setDoc(doc(db, 'users', result.user.uid), {
     uid: result.user.uid,

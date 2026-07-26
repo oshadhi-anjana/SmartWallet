@@ -5,6 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { ScreenNav } from '@/components/screen-nav';
+import { auth } from '@/services/firebase';
+import { logoutUser } from '@/services/authService';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -12,11 +15,17 @@ export default function ProfileScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        <ScreenNav />
         <ThemedView type="backgroundElement" style={styles.card}>
           <ThemedText type="subtitle">Profile</ThemedText>
           <ThemedText themeColor="textSecondary">Manage your account and preferences.</ThemedText>
+          <ThemedText type="smallBold">{auth.currentUser?.displayName || 'SmartWallet user'}</ThemedText>
+          <ThemedText themeColor="textSecondary">{auth.currentUser?.email || 'Offline profile'}</ThemedText>
 
-          <Pressable style={styles.primaryButton} onPress={() => router.push('/login' as never)}>
+          <Pressable style={styles.primaryButton} onPress={async () => {
+            await logoutUser();
+            router.replace('/login' as never);
+          }}>
             <ThemedText type="smallBold" style={styles.buttonText}>
               Log out
             </ThemedText>
@@ -38,7 +47,8 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
     width: '100%',
-    justifyContent: 'center',
+    paddingTop: Spacing.four,
+    gap: Spacing.three,
   },
   card: {
     borderRadius: Spacing.three,
@@ -46,7 +56,7 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   primaryButton: {
-    backgroundColor: '#3c87f7',
+    backgroundColor: '#F57C00',
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: 999,

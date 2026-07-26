@@ -1,12 +1,14 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
+import { ScreenNav } from '@/components/screen-nav';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { getTransactions } from '@/database/transactionQueries';
+import { deleteTransaction, getTransactions } from '@/database/transactionQueries';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { Transaction } from '@/models/Transaction';
 import { auth } from '@/services/firebase';
@@ -24,9 +26,17 @@ export default function TransactionsScreen() {
     setTransactions(result);
   }
 
-  useEffect(() => {
-    loadTransactions();
-  }, []);
+  useFocusEffect(useCallback(() => { loadTransactions(); }, []));
+
+  function handleDelete(id: string) {
+    Alert.alert('Delete transaction?', 'This removes the local record from this device.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        await deleteTransaction(id);
+        await loadTransactions();
+      }},
+    ]);
+  }
 
   async function handleRetrySync() {
     setIsSyncing(true);
@@ -42,6 +52,7 @@ export default function TransactionsScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
+          <ScreenNav />
           <ThemedText type="subtitle">Transactions</ThemedText>
           <ThemedText themeColor="textSecondary">Recent activity from your local wallet.</ThemedText>
 
@@ -64,6 +75,14 @@ export default function TransactionsScreen() {
                     {item.description || 'No description'} • {item.transactionDate}
                   </ThemedText>
                   <ThemedText style={getSyncBadgeStyle(item.syncStatus, isOnline)}>{getSyncLabel(item.syncStatus, isOnline)}</ThemedText>
+                </ThemedView>
+                <ThemedView style={styles.actions}>
+                  <Pressable onPress={() => router.push({ pathname: '/add-transaction', params: { id: item.id } } as never)}>
+                    <ThemedText type="smallBold" style={styles.actionText}>Edit</ThemedText>
+                  </Pressable>
+                  <Pressable onPress={() => handleDelete(item.id)}>
+                    <ThemedText type="smallBold" style={styles.deleteText}>Delete</ThemedText>
+                  </Pressable>
                 </ThemedView>
               </ThemedView>
             ))
@@ -158,34 +177,37 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
     flexWrap: 'wrap',
   },
+  actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: Spacing.three, paddingTop: Spacing.one },
+  actionText: { color: '#0F9D58' },
+  deleteText: { color: '#D32F2F' },
   badgeOffline: {
-    color: '#8b5a00',
+    color: '#F57C00',
     fontWeight: '700',
   },
   badgeSyncing: {
-    color: '#1d4ed8',
+    color: '#F57C00',
     fontWeight: '700',
   },
   badgeSynced: {
-    color: '#15803d',
+    color: '#2E7D32',
     fontWeight: '700',
   },
   badgePending: {
-    color: '#b45309',
+    color: '#F57C00',
     fontWeight: '700',
   },
   badgeFailed: {
-    color: '#b91c1c',
+    color: '#D32F2F',
     fontWeight: '700',
   },
   incomeText: {
-    color: '#1e8f57',
+    color: '#2E7D32',
   },
   expenseText: {
-    color: '#d14343',
+    color: '#D32F2F',
   },
   primaryButton: {
-    backgroundColor: '#3c87f7',
+    backgroundColor: '#0F9D58',
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: 999,
@@ -193,7 +215,7 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     borderWidth: 1,
-    borderColor: '#3c87f7',
+    borderColor: '#F57C00',
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: 999,
@@ -203,6 +225,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   secondaryButtonText: {
-    color: '#3c87f7',
+    color: '#F57C00',
   },
 });

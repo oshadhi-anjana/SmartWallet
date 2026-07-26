@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: '#F7F8FA',
   },
   title: {
     fontSize: 34,
@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
   },
   button: {
     padding: 16,
-    backgroundColor: '#1E6F5C',
+    backgroundColor: '#0F9D58',
     color: '#FFFFFF',
     textAlign: 'center',
     borderRadius: 10,
@@ -48,7 +48,8 @@ const styles = StyleSheet.create({
     padding: 16,
     textAlign: 'center',
     borderWidth: 1,
-    borderColor: '#1E6F5C',
+    borderColor: '#F57C00',
+    color: '#F57C00',
     borderRadius: 10,
   },
 });

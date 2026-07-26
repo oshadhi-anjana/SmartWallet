@@ -1,8 +1,9 @@
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    Image,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -13,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { insertTransaction } from '@/database/transactionQueries';
+import { getTransaction, insertTransaction } from '@/database/transactionQueries';
 import { Transaction } from '@/models/Transaction';
 import { auth } from '@/services/firebase';
 import { createId } from '@/utils/id';
@@ -22,6 +23,7 @@ const categoryOptions = ['Food', 'Transport', 'Bills', 'Shopping', 'Salary', 'Fr
 
 export default function AddTransactionScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id?: string }>();
   const [type, setType] = useState<Transaction['type']>('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');
@@ -30,6 +32,19 @@ export default function AddTransactionScreen() {
   const [receiptUri, setReceiptUri] = useState<string | undefined>();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    getTransaction(id).then((item) => {
+      if (!item) return;
+      setType(item.type);
+      setAmount(String(item.amount));
+      setCategory(item.category);
+      setTransactionDate(item.transactionDate);
+      setDescription(item.description ?? '');
+      setReceiptUri(item.receiptUri);
+    }).catch(() => setError('Unable to load this transaction.'));
+  }, [id]);
 
   async function handlePickReceipt() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -50,6 +65,22 @@ export default function AddTransactionScreen() {
     }
   }
 
+  async function handleCaptureReceipt() {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      setError('Camera permission is required to capture a receipt.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      quality: 0.65,
+    });
+    if (!result.canceled && result.assets[0]?.uri) {
+      setReceiptUri(result.assets[0].uri);
+      setError('');
+    }
+  }
+
   async function handleSave() {
     setError('');
 
@@ -63,8 +94,9 @@ export default function AddTransactionScreen() {
 
     try {
       const now = new Date().toISOString();
+      const existing = id ? await getTransaction(id) : null;
       const transaction: Transaction = {
-        id: createId(),
+        id: existing?.id ?? createId(),
         userId: auth.currentUser?.uid ?? 'local-user',
         type,
         amount: parsedAmount,
@@ -73,7 +105,7 @@ export default function AddTransactionScreen() {
         transactionDate,
         receiptUri,
         syncStatus: 'pending',
-        createdAt: now,
+        createdAt: existing?.createdAt ?? now,
         updatedAt: now,
       };
 
@@ -92,7 +124,7 @@ export default function AddTransactionScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
           <ThemedView type="backgroundElement" style={styles.card}>
-            <ThemedText type="subtitle">Add transaction</ThemedText>
+            <ThemedText type="subtitle">{id ? 'Edit transaction' : 'Add transaction'}</ThemedText>
             <ThemedText themeColor="textSecondary">
               Save locally first, then sync when the connection is available.
             </ThemedText>
@@ -125,12 +157,18 @@ export default function AddTransactionScreen() {
             />
 
             <ThemedText type="smallBold">Category</ThemedText>
-            <TextInput
-              style={styles.input}
-              value={category}
-              onChangeText={setCategory}
-              placeholder="Food"
-            />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <ThemedView style={styles.categoryRow}>
+                {categoryOptions.map((option) => (
+                  <Pressable
+                    key={option}
+                    onPress={() => setCategory(option)}
+                    style={[styles.categoryChip, category === option && styles.typeButtonActive]}>
+                    <ThemedText type="small" style={category === option ? styles.activeText : undefined}>{option}</ThemedText>
+                  </Pressable>
+                ))}
+              </ThemedView>
+            </ScrollView>
 
             <ThemedText type="smallBold">Date</ThemedText>
             <TextInput
@@ -149,15 +187,20 @@ export default function AddTransactionScreen() {
               multiline
             />
 
-            <Pressable style={styles.secondaryButton} onPress={handlePickReceipt}>
-              <ThemedText type="smallBold">Add receipt image</ThemedText>
-            </Pressable>
-            {receiptUri ? <ThemedText themeColor="textSecondary">Receipt selected.</ThemedText> : null}
+            <ThemedView style={styles.receiptActions}>
+              <Pressable style={styles.secondaryButton} onPress={handleCaptureReceipt}>
+                <ThemedText type="smallBold">Take photo</ThemedText>
+              </Pressable>
+              <Pressable style={styles.secondaryButton} onPress={handlePickReceipt}>
+                <ThemedText type="smallBold">Choose photo</ThemedText>
+              </Pressable>
+            </ThemedView>
+            {receiptUri ? <Image source={{ uri: receiptUri }} style={styles.receiptPreview} accessibilityLabel="Selected receipt" /> : null}
 
             {error ? <ThemedText themeColor="textSecondary" style={styles.errorText}>{error}</ThemedText> : null}
 
             <Pressable style={styles.primaryButton} onPress={handleSave} disabled={loading}>
-              {loading ? <ActivityIndicator color="#ffffff" /> : <ThemedText type="smallBold" style={styles.buttonText}>Save transaction</ThemedText>}
+              {loading ? <ActivityIndicator color="#ffffff" /> : <ThemedText type="smallBold" style={styles.buttonText}>{id ? 'Update transaction' : 'Save transaction'}</ThemedText>}
             </Pressable>
           </ThemedView>
         </ScrollView>
@@ -190,23 +233,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.two,
   },
+  categoryRow: { flexDirection: 'row', gap: Spacing.two },
+  categoryChip: { borderWidth: 1, borderColor: '#FFC107', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   typeButton: {
     flex: 1,
     paddingVertical: Spacing.two,
     alignItems: 'center',
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#3c87f7',
+    borderColor: '#0F9D58',
   },
   typeButtonActive: {
-    backgroundColor: '#3c87f7',
+    backgroundColor: '#0F9D58',
   },
   activeText: {
     color: '#ffffff',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#d0d7de',
+    borderColor: '#FFC107',
     borderRadius: 10,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.two,
@@ -217,14 +262,17 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   secondaryButton: {
+    flex: 1,
     paddingVertical: Spacing.two,
     alignItems: 'center',
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#3c87f7',
+    borderColor: '#F57C00',
   },
+  receiptActions: { flexDirection: 'row', gap: Spacing.two },
+  receiptPreview: { width: '100%', height: 160, borderRadius: 12, resizeMode: 'cover' },
   primaryButton: {
-    backgroundColor: '#3c87f7',
+    backgroundColor: '#0F9D58',
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: 999,
@@ -234,6 +282,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   errorText: {
-    color: '#d14343',
+    color: '#D32F2F',
   },
 });
