@@ -1,96 +1,61 @@
-import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Link } from 'expo-router';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 export default function WelcomeScreen() {
-  const router = useRouter();
-
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.content}>
-          <ThemedText type="title">SmartWallet</ThemedText>
-          <ThemedText themeColor="textSecondary" style={styles.subtitle}>
-            Track expenses, plan budgets, and grow your savings from one calm dashboard.
-          </ThemedText>
+    <View style={styles.container}>
+      <Image
+        source={require('../../assets/images/smartwallet-logo.png')}
+        style={styles.logo}
+        resizeMode="contain"
+        accessibilityLabel="SmartWallet - Manage Money Smarter"
+      />
+      {/* <Text style={styles.subtitle}>Manage your money anywhere, even when you are offline.</Text> */}
 
-          <ThemedView type="backgroundElement" style={styles.card}>
-            <ThemedText type="smallBold">What you can do</ThemedText>
-            <ThemedText themeColor="textSecondary" style={styles.listItem}>
-              • Review your daily spending at a glance
-            </ThemedText>
-            <ThemedText themeColor="textSecondary" style={styles.listItem}>
-              • Add transactions quickly from your phone
-            </ThemedText>
-            <ThemedText themeColor="textSecondary" style={styles.listItem}>
-              • Keep an eye on savings goals and budgets
-            </ThemedText>
-          </ThemedView>
+      <Link href="/login" style={styles.button}>
+        Login
+      </Link>
 
-          <Pressable style={styles.primaryButton} onPress={() => router.push('/login' as never)}>
-            <ThemedText type="smallBold" style={styles.buttonText}>
-              Continue to login
-            </ThemedText>
-          </Pressable>
-
-          <Pressable style={styles.secondaryButton} onPress={() => router.push('/dashboard' as never)}>
-            <ThemedText type="smallBold">Open dashboard</ThemedText>
-          </Pressable>
-        </ScrollView>
-      </SafeAreaView>
-    </ThemedView>
+      <Link href="/register" style={styles.secondaryButton}>
+        Create Account
+      </Link>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-    alignSelf: 'center',
-    width: '100%',
-  },
-  content: {
-    flexGrow: 1,
     justifyContent: 'center',
-    gap: Spacing.three,
-    paddingVertical: Spacing.five,
+    padding: 24,
+    backgroundColor: '#F7F8FA',
+  },
+  logo: {
+    width: '100%',
+    maxWidth: 420,
+    height: 330,
+    alignSelf: 'center',
+    marginBottom: 8,
   },
   subtitle: {
-    maxWidth: 560,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 32,
   },
-  card: {
-    borderRadius: Spacing.three,
-    padding: Spacing.three,
-    gap: Spacing.one,
-  },
-  listItem: {
-    marginLeft: Spacing.one,
-  },
-  primaryButton: {
-    backgroundColor: '#3c87f7',
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 999,
-    alignItems: 'center',
+  button: {
+    padding: 16,
+    backgroundColor: '#0F9D58',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    borderRadius: 10,
+    marginBottom: 12,
   },
   secondaryButton: {
+    padding: 16,
+    textAlign: 'center',
     borderWidth: 1,
-    borderColor: '#3c87f7',
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 999,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#ffffff',
+    borderColor: '#F57C00',
+    color: '#F57C00',
+    borderRadius: 10,
   },
 });

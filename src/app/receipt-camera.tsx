@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   primaryButton: {
-    backgroundColor: '#3c87f7',
+    backgroundColor: '#0F9D58',
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: 999,

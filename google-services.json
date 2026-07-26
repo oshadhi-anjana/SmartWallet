@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "974360676696",
+    "project_id": "smartwallet-40332",
+    "storage_bucket": "smartwallet-40332.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:974360676696:android:6730836c59e54ad1c0bd2d",
+        "android_client_info": {
+          "package_name": "com.oshadhi.smartwallet"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "974360676696-9dq20fcigv10u2rv4hn1cu05nn76nd1c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.oshadhi.smartwallet",
+            "certificate_hash": "bc273e191b97fb74bdc90869353eba54ec663099"
+          }
+        },
+        {
+          "client_id": "974360676696-f0pn1r3d773a3a9prvg02t4ooesqafjj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBiSePv308Hn47WYRMdq_Lo8CuGzdVgewY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "974360676696-f0pn1r3d773a3a9prvg02t4ooesqafjj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
