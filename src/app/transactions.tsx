@@ -32,8 +32,10 @@ export default function TransactionsScreen() {
 
   const load = useCallback(async () => {
     const userId = auth.currentUser?.uid ?? 'local-user';
-    await refreshWalletData(userId);
     setTransactions(await getTransactions(userId));
+    refreshWalletData(userId).then(async () => {
+      setTransactions(await getTransactions(userId));
+    }).catch(() => undefined);
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 

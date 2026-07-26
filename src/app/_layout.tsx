@@ -44,6 +44,14 @@ function AuthGuard() {
 
     if (!isSignedIn && !isPublicRoute) {
       router.replace('/login');
+      return;
+    }
+
+    // Firebase restores its persisted React Native session without requiring
+    // the network. Send returning users to their local wallet, where the
+    // biometric gate confirms identity before showing financial data.
+    if (isSignedIn && isPublicRoute) {
+      router.replace('/dashboard');
     }
   }, [isReady, isSignedIn, router, segments]);
 

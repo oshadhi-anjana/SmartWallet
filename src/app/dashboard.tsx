@@ -33,13 +33,14 @@ export default function DashboardScreen() {
     async function load() {
       try {
         const userId = auth.currentUser?.uid ?? 'local-user';
-        await refreshWalletData(userId);
-        const [items, name] = await Promise.all([
-          getTransactions(userId),
-          getCurrentUserName(),
-        ]);
+        const items = await getTransactions(userId);
         setTransactions(items);
-        setUserName(name);
+        setUserName(auth.currentUser?.displayName ?? auth.currentUser?.email?.split('@')[0] ?? '');
+
+        getCurrentUserName().then(setUserName).catch(() => undefined);
+        refreshWalletData(userId).then(async () => {
+          setTransactions(await getTransactions(userId));
+        }).catch(() => undefined);
       } catch (error) {
         console.error('Unable to load the dashboard.', error);
       }

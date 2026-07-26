@@ -17,7 +17,7 @@ import { deleteSavingsGoalEverywhere, refreshWalletData, syncPendingSavingsGoals
 import { createId } from '@/utils/id';
 
 export default function SavingsScreen() {
-  const { formatCurrency: money, currency, theme } = useAppTheme();
+  const { formatCurrency: money, currency, theme, convertFromBase, convertToBase, exchangeRate } = useAppTheme();
   const [title, setTitle] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [currentAmount, setCurrentAmount] = useState('');
@@ -31,8 +31,10 @@ export default function SavingsScreen() {
   const userId = auth.currentUser?.uid ?? 'local-user';
 
   const load = useCallback(async () => {
-    await refreshWalletData(userId);
     setGoals(await getSavingsGoals(userId));
+    refreshWalletData(userId).then(async () => {
+      setGoals(await getSavingsGoals(userId));
+    }).catch(() => undefined);
   }, [userId]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -59,8 +61,8 @@ export default function SavingsScreen() {
   function startEdit(goal: SavingsGoal) {
     setEditingGoal(goal);
     setTitle(goal.title);
-    setTargetAmount(String(goal.targetAmount));
-    setCurrentAmount(String(goal.currentAmount));
+    setTargetAmount(String(Number(convertFromBase(goal.targetAmount).toFixed(2))));
+    setCurrentAmount(String(Number(convertFromBase(goal.currentAmount).toFixed(2))));
     setTargetDate(goal.targetDate ?? '');
     setError('');
     setFormOpen(true);
@@ -73,13 +75,17 @@ export default function SavingsScreen() {
       setError('Enter a goal name and valid amounts. Saved amount cannot exceed the target.');
       return;
     }
+    if (exchangeRate === null) {
+      setError(`The ${currency} exchange rate is unavailable. Connect to the internet and try again.`);
+      return;
+    }
     const now = new Date().toISOString();
     await saveSavingsGoal({
       id: editingGoal?.id ?? createId(),
       userId,
       title: title.trim(),
-      targetAmount: target,
-      currentAmount: current,
+      targetAmount: convertToBase(target),
+      currentAmount: convertToBase(current),
       targetDate: targetDate || undefined,
       syncStatus: 'pending',
       createdAt: editingGoal?.createdAt ?? now,

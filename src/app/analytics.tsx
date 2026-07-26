@@ -27,10 +27,12 @@ export default function AnalyticsScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   useFocusEffect(useCallback(() => {
     const userId = auth.currentUser?.uid ?? 'local-user';
-    refreshWalletData(userId)
-      .then(() => getTransactions(userId))
-      .then(setTransactions)
-      .catch((error) => console.error('Unable to load analytics data', error));
+    getTransactions(userId).then(setTransactions).catch((error) => {
+      console.error('Unable to load local analytics data', error);
+    });
+    refreshWalletData(userId).then(async () => {
+      setTransactions(await getTransactions(userId));
+    }).catch(() => undefined);
   }, []));
 
   const selectedPeriod = useMemo(

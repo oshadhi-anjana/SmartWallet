@@ -22,7 +22,7 @@ import { createId } from '@/utils/id';
 const categories = ['Food', 'Transport', 'Bills', 'Shopping', 'Entertainment', 'Health'];
 
 export default function BudgetScreen() {
-  const { formatCurrency, currency, theme } = useAppTheme();
+  const { formatCurrency, currency, theme, convertFromBase, convertToBase, exchangeRate } = useAppTheme();
   const currentMonth = new Date().toISOString().slice(0, 7);
   const [month, setMonth] = useState(currentMonth);
   const [filterMonth, setFilterMonth] = useState(currentMonth);
@@ -38,10 +38,14 @@ export default function BudgetScreen() {
   const userId = auth.currentUser?.uid ?? 'local-user';
 
   const load = useCallback(async () => {
-    await refreshWalletData(userId);
     const [saved, tx] = await Promise.all([getBudgets(userId), getTransactions(userId)]);
     setBudgets(saved);
     setTransactions(tx);
+    refreshWalletData(userId).then(async () => {
+      const [remoteBudgets, remoteTransactions] = await Promise.all([getBudgets(userId), getTransactions(userId)]);
+      setBudgets(remoteBudgets);
+      setTransactions(remoteTransactions);
+    }).catch(() => undefined);
   }, [userId]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -76,6 +80,10 @@ export default function BudgetScreen() {
       setError('Select a month and enter a positive limit.');
       return;
     }
+    if (exchangeRate === null) {
+      setError(`The ${currency} exchange rate is unavailable. Connect to the internet and try again.`);
+      return;
+    }
     const duplicate = budgets.find((item) =>
       item.month === month && item.category === category && item.id !== editingBudget?.id
     );
@@ -90,7 +98,7 @@ export default function BudgetScreen() {
       userId,
       category,
       month,
-      limitAmount: amount,
+      limitAmount: convertToBase(amount),
       spentAmount: 0,
       syncStatus: 'pending',
       createdAt: editingBudget?.createdAt ?? now,
@@ -109,7 +117,7 @@ export default function BudgetScreen() {
     setEditingBudget(budget);
     setMonth(budget.month);
     setCategory(budget.category);
-    setLimit(String(budget.limitAmount));
+    setLimit(String(Number(convertFromBase(budget.limitAmount).toFixed(2))));
     setError('');
     setFormOpen(true);
   }

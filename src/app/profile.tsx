@@ -36,7 +36,7 @@ const themeLabels: Record<AppThemeName, string> = {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { theme, themeName, setThemeName, currency, setCurrency } = useAppTheme();
+  const { theme, themeName, setThemeName, currency, setCurrency, exchangeRate, ratesUpdatedAt, refreshExchangeRates } = useAppTheme();
   const [section, setSection] = useState<Section>(null);
   const [userName, setUserName] = useState(auth.currentUser?.displayName ?? '');
   const [nameInput, setNameInput] = useState(userName);
@@ -172,6 +172,18 @@ export default function ProfileScreen() {
 
                 {section === 'preferences' ? <>
                   <ChoiceGroup label="Currency" values={['LKR', 'USD', 'EUR']} selected={currency} onSelect={(value) => setCurrency(value as CurrencyCode)} />
+                  <View style={[styles.rateCard, { backgroundColor: theme.background }]}>
+                    <View style={styles.rateCopy}>
+                      <ThemedText type="smallBold">{currency === 'LKR' ? 'Base currency' : `1 LKR = ${exchangeRate?.toFixed(6) ?? '…'} ${currency}`}</ThemedText>
+                      <ThemedText themeColor="textSecondary" style={styles.toggleDescription}>
+                        {ratesUpdatedAt ? `Daily rate: ${ratesUpdatedAt}` : 'Waiting for an exchange rate'}
+                      </ThemedText>
+                      <ThemedText themeColor="textSecondary" style={styles.rateSource}>Rates by Frankfurter</ThemedText>
+                    </View>
+                    <Pressable onPress={async () => {
+                      try { await refreshExchangeRates(); setMessage('Exchange rates updated.'); } catch { setMessage('Unable to update rates. The cached rate will be used.'); }
+                    }}><Ionicons name="refresh-outline" size={22} color={theme.primary} /></Pressable>
+                  </View>
                   <ChoiceGroup label="Region" values={['Sri Lanka', 'Asia', 'Europe']} selected={region} onSelect={setRegion} />
                   <PrimaryButton label="Save preferences" onPress={savePreferences} color={theme.primary} />
                 </> : null}
@@ -261,6 +273,7 @@ const styles = StyleSheet.create({
   settingLabel: { fontSize: 12 }, input: { minHeight: 49, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12 }, readonly: { minHeight: 49, borderRadius: 12, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   primaryButton: { minHeight: 49, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 4 }, white: { color: '#FFFFFF' },
   group: { gap: 7 }, choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, choice: { minHeight: 42, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
+  rateCard: { borderRadius: 13, padding: 11, flexDirection: 'row', alignItems: 'center' }, rateCopy: { flex: 1 }, rateSource: { fontSize: 9, lineHeight: 13 },
   themeOption: { minHeight: 78, borderRadius: 16, borderWidth: 2, padding: 10, flexDirection: 'row', alignItems: 'center' }, themePreview: { width: 62, height: 50, borderRadius: 10, padding: 7 }, previewCard: { height: 15, borderRadius: 4 }, previewAccent: { width: 28, height: 8, borderRadius: 4, marginTop: 7 }, themeCopy: { flex: 1, paddingHorizontal: 11 },
   toggleRow: { minHeight: 62, flexDirection: 'row', alignItems: 'center' }, toggleCopy: { flex: 1, paddingRight: 10 }, toggleDescription: { fontSize: 11, lineHeight: 16 },
   actionCard: { minHeight: 68, borderRadius: 15, borderWidth: 1, padding: 11, flexDirection: 'row', alignItems: 'center' }, actionIcon: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, actionCopy: { flex: 1, paddingHorizontal: 10 },

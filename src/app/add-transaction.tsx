@@ -21,13 +21,14 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { getTransaction, insertTransaction } from '@/database/transactionQueries';
 import { Transaction } from '@/models/Transaction';
 import { auth } from '@/services/firebase';
+import { refreshWalletData } from '@/services/syncService';
 import { createId } from '@/utils/id';
 
 const categoryOptions = ['Food', 'Transport', 'Bills', 'Shopping', 'Salary', 'Freelance', 'Entertainment', 'Health'];
 
 export default function AddTransactionScreen() {
   const router = useRouter();
-  const { theme } = useAppTheme();
+  const { theme, currency, convertFromBase, convertToBase, exchangeRate } = useAppTheme();
   const scrollRef = useRef<ScrollView>(null);
   const { id } = useLocalSearchParams<{ id?: string }>();
   const [type, setType] = useState<Transaction['type']>('expense');
@@ -44,7 +45,7 @@ export default function AddTransactionScreen() {
     getTransaction(id).then((item) => {
       if (!item) return;
       setType(item.type);
-      setAmount(String(item.amount));
+      setAmount(String(Number(convertFromBase(item.amount).toFixed(2))));
       setCategory(item.category);
       setTransactionDate(item.transactionDate);
       setDescription(item.description ?? '');
@@ -95,6 +96,10 @@ export default function AddTransactionScreen() {
       setError('Enter a valid amount.');
       return;
     }
+    if (exchangeRate === null) {
+      setError(`The ${currency} exchange rate is unavailable. Connect to the internet and try again.`);
+      return;
+    }
 
     setLoading(true);
 
@@ -105,7 +110,7 @@ export default function AddTransactionScreen() {
         id: existing?.id ?? createId(),
         userId: auth.currentUser?.uid ?? 'local-user',
         type,
-        amount: parsedAmount,
+        amount: convertToBase(parsedAmount),
         category,
         description: description.trim() || undefined,
         transactionDate,
@@ -116,6 +121,9 @@ export default function AddTransactionScreen() {
       };
 
       await insertTransaction(transaction);
+      refreshWalletData(transaction.userId).catch((syncError) => {
+        console.info('Transaction will sync automatically when online.', syncError);
+      });
       router.replace('/transactions' as never);
     } catch (saveError) {
       console.error('Failed to save transaction', saveError);
@@ -163,7 +171,7 @@ export default function AddTransactionScreen() {
               </Pressable>
             </ThemedView>
 
-            <ThemedText type="smallBold">Amount</ThemedText>
+            <ThemedText type="smallBold">Amount ({currency})</ThemedText>
             <TextInput
               style={styles.input}
               value={amount}

@@ -1,3 +1,4 @@
+import NetInfo from '@react-native-community/netinfo';
 import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
 
 import {
@@ -155,6 +156,9 @@ export async function refreshWalletData(userId: string) {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
+    const network = await NetInfo.fetch();
+    if (!network.isConnected || network.isInternetReachable === false) return;
+
     await Promise.all([
       syncPendingTransactions(),
       syncPendingBudgets(),
