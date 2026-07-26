@@ -10,6 +10,7 @@ import { useColorScheme } from 'react-native';
 import { onAuthStateChanged } from 'firebase/auth';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { BiometricGate } from '@/components/biometric-gate';
 import { auth } from '@/services/firebase';
 import { initializeDatabase } from '../database/database';
 import { useSync } from '../hooks/useSync';
@@ -115,6 +116,7 @@ export default function RootLayout() {
       
 
       <AnimatedSplashOverlay />
+      <BiometricGate />
     </ThemeProvider>
   );
 }

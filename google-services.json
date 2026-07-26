@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "974360676696-jt1is11sgkqk1atnvao6jamvgvkgc47r.apps.googleusercontent.com",
+          "client_id": "974360676696-9dq20fcigv10u2rv4hn1cu05nn76nd1c.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.oshadhi.smartwallet",
-            "certificate_hash": "e090ed1e63a277149f4d5d836769301864f07936"
+            "certificate_hash": "bc273e191b97fb74bdc90869353eba54ec663099"
           }
         },
         {
