@@ -94,6 +94,11 @@ export default function RootLayout() {
           name="add-transaction"
           options={{ title: 'SmartWallet' }}
         />
+
+        <Stack.Screen
+          name="analytics"
+          options={{ title: 'SmartWallet' }}
+        />
       </Stack>
 
       <AnimatedSplashOverlay />
