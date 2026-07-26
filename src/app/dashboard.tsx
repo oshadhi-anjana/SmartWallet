@@ -30,15 +30,19 @@ export default function DashboardScreen() {
 
   useFocusEffect(useCallback(() => {
     async function load() {
-      const userId = auth.currentUser?.uid ?? 'local-user';
-      const [items, name] = await Promise.all([
-        getTransactions(userId),
-        getCurrentUserName(),
-      ]);
-      setTransactions(items);
-      setUserName(name);
+      try {
+        const userId = auth.currentUser?.uid ?? 'local-user';
+        const [items, name] = await Promise.all([
+          getTransactions(userId),
+          getCurrentUserName(),
+        ]);
+        setTransactions(items);
+        setUserName(name);
+      } catch (error) {
+        console.error('Unable to load the dashboard.', error);
+      }
     }
-    load();
+    load().catch(() => undefined);
   }, []));
 
   const summary = useMemo(() => {

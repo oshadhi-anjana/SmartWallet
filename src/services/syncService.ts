@@ -6,11 +6,19 @@ import {
     markTransactionFailed,
     markTransactionSynced,
 } from '../database/transactionQueries';
-import { deleteBudget, getPendingBudgets, updateBudgetSyncStatus } from '../database/walletQueries';
+import {
+  deleteBudget,
+  deleteSavingsGoal,
+  getPendingBudgets,
+  getPendingSavingsGoals,
+  updateBudgetSyncStatus,
+  updateSavingsGoalSyncStatus,
+} from '../database/walletQueries';
 import { firestore } from './firebase';
 
 let syncInProgress = false;
 let budgetSyncInProgress = false;
+let savingsSyncInProgress = false;
 
 export async function deleteTransactionEverywhere(userId: string, transactionId: string) {
   if (userId !== 'local-user') {
@@ -56,6 +64,37 @@ export async function syncPendingBudgets() {
     }
   } finally {
     budgetSyncInProgress = false;
+  }
+}
+
+export async function deleteSavingsGoalEverywhere(userId: string, goalId: string) {
+  if (userId !== 'local-user') {
+    await deleteDoc(doc(firestore, 'users', userId, 'savingsGoals', goalId));
+  }
+  await deleteSavingsGoal(goalId);
+}
+
+export async function syncPendingSavingsGoals() {
+  if (savingsSyncInProgress) return;
+  savingsSyncInProgress = true;
+  try {
+    const goals = await getPendingSavingsGoals();
+    for (const goal of goals) {
+      if (goal.userId === 'local-user') continue;
+      try {
+        await setDoc(
+          doc(firestore, 'users', goal.userId, 'savingsGoals', goal.id),
+          { ...goal, syncStatus: 'synced' },
+          { merge: true }
+        );
+        await updateSavingsGoalSyncStatus(goal.id, 'synced');
+      } catch (error) {
+        console.error('Failed to sync savings goal', goal.id, error);
+        await updateSavingsGoalSyncStatus(goal.id, 'failed');
+      }
+    }
+  } finally {
+    savingsSyncInProgress = false;
   }
 }
 

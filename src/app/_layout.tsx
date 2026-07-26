@@ -107,6 +107,10 @@ export default function RootLayout() {
           name="budget"
           options={{ title: 'SmartWallet' }}
         />
+        <Stack.Screen
+          name="savings"
+          options={{ title: 'SmartWallet' }}
+        />
       </Stack>
       
 

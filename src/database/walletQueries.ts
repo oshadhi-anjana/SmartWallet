@@ -66,6 +66,21 @@ export async function getSavingsGoals(userId: string) {
   );
 }
 
+export async function getPendingSavingsGoals() {
+  const db = await getInitializedDatabase();
+  return db.getAllAsync<SavingsGoal>(
+    `SELECT id, user_id AS userId, title, target_amount AS targetAmount,
+      current_amount AS currentAmount, target_date AS targetDate,
+      sync_status AS syncStatus, created_at AS createdAt, updated_at AS updatedAt
+     FROM savings_goals WHERE sync_status IN ('pending', 'failed')`
+  );
+}
+
+export async function updateSavingsGoalSyncStatus(id: string, syncStatus: SavingsGoal['syncStatus']) {
+  const db = await getInitializedDatabase();
+  await db.runAsync('UPDATE savings_goals SET sync_status = ? WHERE id = ?', syncStatus, id);
+}
+
 export async function deleteSavingsGoal(id: string) {
   const db = await getInitializedDatabase();
   await db.runAsync('DELETE FROM savings_goals WHERE id = ?', id);

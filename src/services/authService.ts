@@ -29,10 +29,16 @@ export async function registerUser(email: string, password: string, name?: strin
 export async function loginUser(email: string, password: string) {
   const result = await signInWithEmailAndPassword(auth, email.trim(), password);
   if (!result.user.displayName) {
-    const profile = await getDoc(doc(db, 'users', result.user.uid));
-    const savedName = profile.exists() ? String(profile.data().name ?? '').trim() : '';
-    if (savedName) {
-      await updateProfile(result.user, { displayName: savedName });
+    try {
+      const profile = await getDoc(doc(db, 'users', result.user.uid));
+      const savedName = profile.exists() ? String(profile.data().name ?? '').trim() : '';
+      if (savedName) {
+        await updateProfile(result.user, { displayName: savedName });
+      }
+    } catch (error) {
+      // Authentication may restore a cached user while Firestore is offline.
+      // The dashboard will use the email-based fallback until profile data is available.
+      console.info('User profile is unavailable offline.', error);
     }
   }
   return result.user;
@@ -43,11 +49,17 @@ export async function getCurrentUserName() {
   if (!user) return '';
   if (user.displayName?.trim()) return user.displayName.trim();
 
-  const profile = await getDoc(doc(db, 'users', user.uid));
-  const savedName = profile.exists() ? String(profile.data().name ?? '').trim() : '';
-  if (savedName) {
-    await updateProfile(user, { displayName: savedName });
-    return savedName;
+  try {
+    const profile = await getDoc(doc(db, 'users', user.uid));
+    const savedName = profile.exists() ? String(profile.data().name ?? '').trim() : '';
+    if (savedName) {
+      await updateProfile(user, { displayName: savedName });
+      return savedName;
+    }
+  } catch (error) {
+    // Firestore has no cached profile document. Fall back to the authenticated
+    // email without rejecting the screen's offline loading promise.
+    console.info('Using offline display-name fallback.', error);
   }
 
   const emailName = user.email?.split('@')[0].replace(/[._-]+/g, ' ').trim() ?? '';
