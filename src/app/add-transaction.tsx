@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAppTheme } from '@/components/app-theme-provider';
+import { ScreenNav } from '@/components/screen-nav';
 import { DateField } from '@/components/date-field';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { getTransaction, insertTransaction } from '@/database/transactionQueries';
@@ -225,6 +226,7 @@ export default function AddTransactionScreen() {
           </ThemedView>
           </ScrollView>
         </KeyboardAvoidingView>
+        <ScreenNav />
       </SafeAreaView>
     </ThemedView>
   );
