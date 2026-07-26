@@ -66,6 +66,23 @@ export async function getCurrentUserName() {
   return emailName.replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+export async function updateCurrentUserName(name: string) {
+  const user = auth.currentUser;
+  const normalizedName = name.trim();
+  if (!user) throw new Error('You must be signed in to update your profile.');
+  if (normalizedName.length < 2) throw new Error('Name must contain at least 2 characters.');
+
+  await updateProfile(user, { displayName: normalizedName });
+  await setDoc(doc(db, 'users', user.uid), {
+    uid: user.uid,
+    email: user.email,
+    name: normalizedName,
+    updatedAt: new Date().toISOString(),
+  }, { merge: true });
+
+  return normalizedName;
+}
+
 export async function requestPasswordReset(email: string) {
   const normalizedEmail = email.trim().toLowerCase();
   if (!normalizedEmail) {

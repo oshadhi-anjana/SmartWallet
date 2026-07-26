@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePathname, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppTheme } from './app-theme-provider';
 
 const destinations = [
   ['/dashboard', 'home-outline', 'home', 'Dashboard'],
@@ -15,9 +16,10 @@ export function ScreenNav() {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
+  const { theme } = useAppTheme();
 
   return (
-    <View style={[styles.shell, { bottom: Math.max(insets.bottom, 8) + 6 }]}>
+    <View style={[styles.shell, { bottom: Math.max(insets.bottom, 8) + 6, backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
       {destinations.map(([href, icon, activeIcon, label], index) => {
         const active = pathname === href;
         const isAdd = index === 2;
@@ -29,18 +31,18 @@ export function ScreenNav() {
             key={href}
             onPress={() => router.replace(href as never)}
             style={styles.item}>
-            <View style={[styles.iconContainer, isAdd && styles.addItem, active && !isAdd && styles.activeItem]}>
+            <View style={[styles.iconContainer, isAdd && styles.addItem, (isAdd || active) && { backgroundColor: theme.primary }, active && !isAdd && styles.activeItem]}>
               <Ionicons
                 name={(active ? activeIcon : icon) as never}
                 size={isAdd ? 29 : 22}
-                color={isAdd || active ? '#FFFFFF' : '#68756F'}
+                color={isAdd || active ? '#FFFFFF' : theme.textSecondary}
               />
             </View>
             <Text
               numberOfLines={1}
               adjustsFontSizeToFit
               minimumFontScale={0.75}
-              style={[styles.label, (active || isAdd) && styles.activeLabel]}>
+              style={[styles.label, { color: theme.textSecondary }, (active || isAdd) && styles.activeLabel, (active || isAdd) && { color: theme.primary }]}>
               {label}
             </Text>
           </Pressable>

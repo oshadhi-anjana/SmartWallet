@@ -24,6 +24,55 @@ export const Colors = {
   },
 } as const;
 
+export const AppThemes = {
+  'asia-light': {
+    text: '#212121',
+    background: '#F7F8FA',
+    backgroundElement: '#FFFFFF',
+    backgroundSelected: '#FFC107',
+    textSecondary: '#68756F',
+    primary: '#0F9D58',
+    secondary: '#F57C00',
+    border: '#ECE9DF',
+    isDark: false,
+  },
+  'asia-dark': {
+    text: '#F4FFF8',
+    background: '#071B12',
+    backgroundElement: '#10291E',
+    backgroundSelected: '#FFC107',
+    textSecondary: '#B8C9C0',
+    primary: '#27C978',
+    secondary: '#FF9A3C',
+    border: '#294438',
+    isDark: true,
+  },
+  'europe-light': {
+    text: '#172033',
+    background: '#F4F7FB',
+    backgroundElement: '#FFFFFF',
+    backgroundSelected: '#60A5FA',
+    textSecondary: '#667085',
+    primary: '#2563EB',
+    secondary: '#0EA5E9',
+    border: '#DFE6F0',
+    isDark: false,
+  },
+  'europe-dark': {
+    text: '#F8FAFC',
+    background: '#0F172A',
+    backgroundElement: '#1E293B',
+    backgroundSelected: '#60A5FA',
+    textSecondary: '#CBD5E1',
+    primary: '#60A5FA',
+    secondary: '#38BDF8',
+    border: '#334155',
+    isDark: true,
+  },
+} as const;
+
+export type AppThemeName = keyof typeof AppThemes;
+
 export const Palette = {
   primary: '#0F9D58',
   secondary: '#F57C00',

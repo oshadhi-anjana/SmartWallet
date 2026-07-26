@@ -6,10 +6,10 @@ import {
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
-import { useColorScheme } from 'react-native';
 import { onAuthStateChanged } from 'firebase/auth';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { AppThemeProvider, useAppTheme } from '@/components/app-theme-provider';
 import { BiometricGate } from '@/components/biometric-gate';
 import { auth } from '@/services/firebase';
 import { initializeDatabase } from '../database/database';
@@ -51,18 +51,32 @@ function AuthGuard() {
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   useEffect(() => {
     initializeDatabase().catch((error) => {
       console.error('Database initialization failed:', error);
     });
   }, []);
 
+  return <AppThemeProvider><AppShell /></AppThemeProvider>;
+}
+
+function AppShell() {
+  const { theme } = useAppTheme();
+  const navigationTheme = {
+    ...(theme.isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(theme.isDark ? DarkTheme.colors : DefaultTheme.colors),
+      primary: theme.primary,
+      background: theme.background,
+      card: theme.backgroundElement,
+      text: theme.text,
+      border: theme.border,
+      notification: theme.secondary,
+    },
+  };
+
   return (
-    <ThemeProvider
-      value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
-    >
+    <ThemeProvider value={navigationTheme}>
       <SyncBridge />
       <AuthGuard />
 
@@ -110,6 +124,10 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="savings"
+          options={{ title: 'SmartWallet' }}
+        />
+          <Stack.Screen
+          name="profile"
           options={{ title: 'SmartWallet' }}
         />
       </Stack>
