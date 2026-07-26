@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, Sc
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PasswordField } from '@/components/password-field';
+import { useAppTheme } from '@/components/app-theme-provider';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -12,6 +13,7 @@ import { loginUser, loginWithGoogleIdToken, requestPasswordReset } from '@/servi
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { theme } = useAppTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -125,10 +127,10 @@ export default function LoginScreen() {
           <PasswordField placeholder="Password" value={password} onChangeText={setPassword} autoComplete="current-password" />
 
           <Pressable onPress={handleForgotPassword} hitSlop={8}>
-            <ThemedText style={styles.forgot}>Forgot Password?</ThemedText>
+            <ThemedText style={[styles.forgot, { color: theme.primary }]}>Forgot Password?</ThemedText>
           </Pressable>
 
-          <Pressable style={styles.loginButton} onPress={handleLogin} disabled={isLoading}>
+          <Pressable style={[styles.loginButton, { backgroundColor: theme.primary, shadowColor: theme.primary }]} onPress={handleLogin} disabled={isLoading}>
             {isLoading ? <ActivityIndicator color="#FFFFFF" /> : <ThemedText type="smallBold" style={styles.loginText}>Login</ThemedText>}
           </Pressable>
 
@@ -139,13 +141,13 @@ export default function LoginScreen() {
           </View>
 
           <Pressable style={styles.googleButton} disabled={isGoogleLoading} onPress={handleGoogleLogin}>
-            {isGoogleLoading ? <ActivityIndicator color="#0F9D58" /> : <><GoogleMark /><ThemedText type="smallBold">Continue with Google</ThemedText></>}
+            {isGoogleLoading ? <ActivityIndicator color={theme.primary} /> : <><GoogleMark /><ThemedText type="smallBold">Continue with Google</ThemedText></>}
           </Pressable>
         </View>
 
         <View style={styles.signupRow}>
           <ThemedText themeColor="textSecondary" style={styles.signupText}>Don&apos;t have an account?</ThemedText>
-          <Link href="/register" style={styles.signupLink}> Sign Up</Link>
+          <Link href="/register" style={[styles.signupLink, { color: theme.primary }]}> Sign Up</Link>
         </View>
           </ScrollView>
         </SafeAreaView>

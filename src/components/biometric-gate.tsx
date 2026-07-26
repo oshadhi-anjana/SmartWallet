@@ -7,9 +7,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { logoutUser } from '@/services/authService';
 import { auth } from '@/services/firebase';
+import { useAppTheme } from './app-theme-provider';
 import { ThemedText } from './themed-text';
 
 export function BiometricGate() {
+  const { theme } = useAppTheme();
   const firstAuthEvent = useRef(true);
   const authenticationRunning = useRef(false);
   const [locked, setLocked] = useState(false);
@@ -82,9 +84,9 @@ export function BiometricGate() {
 
   return (
     <Modal visible={locked} animationType="fade" onRequestClose={() => undefined}>
-      <SafeAreaView style={styles.container}>
-        <View style={styles.icon}>
-          <Ionicons name="finger-print-outline" size={46} color="#0F9D58" />
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={[styles.icon, { backgroundColor: `${theme.primary}18` }]}>
+          <Ionicons name="finger-print-outline" size={46} color={theme.primary} />
         </View>
         <ThemedText type="subtitle" style={styles.title}>SmartWallet is locked</ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.description}>
@@ -96,7 +98,7 @@ export function BiometricGate() {
             <ThemedText style={styles.messageText}>{message}</ThemedText>
           </View>
         ) : null}
-        <Pressable style={styles.unlockButton} onPress={unlock} disabled={checking}>
+        <Pressable style={[styles.unlockButton, { backgroundColor: theme.primary }]} onPress={unlock} disabled={checking}>
           {checking
             ? <ActivityIndicator color="#FFFFFF" />
             : <><Ionicons name="finger-print-outline" size={22} color="#FFFFFF" /><ThemedText type="smallBold" style={styles.unlockText}>Unlock SmartWallet</ThemedText></>}

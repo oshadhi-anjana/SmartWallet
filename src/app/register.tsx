@@ -4,6 +4,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollVie
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { useAppTheme } from '@/components/app-theme-provider';
 import { ThemedView } from '@/components/themed-view';
 import { PasswordField } from '@/components/password-field';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -11,6 +12,7 @@ import { registerUser } from '../services/authService';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { theme } = useAppTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -99,7 +101,7 @@ export default function RegisterScreen() {
             onChangeText={setConfirmPassword}
           />
 
-          <Pressable style={styles.primaryButton} onPress={handleRegister} disabled={isLoading}>
+          <Pressable style={[styles.primaryButton, { backgroundColor: theme.primary }]} onPress={handleRegister} disabled={isLoading}>
             {isLoading ? <ActivityIndicator color="#fff" /> : <ThemedText type="smallBold" style={styles.buttonText}>Register</ThemedText>}
           </Pressable>
 

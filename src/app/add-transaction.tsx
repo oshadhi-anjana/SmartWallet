@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useAppTheme } from '@/components/app-theme-provider';
 import { DateField } from '@/components/date-field';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { getTransaction, insertTransaction } from '@/database/transactionQueries';
@@ -26,6 +27,7 @@ const categoryOptions = ['Food', 'Transport', 'Bills', 'Shopping', 'Salary', 'Fr
 
 export default function AddTransactionScreen() {
   const router = useRouter();
+  const { theme } = useAppTheme();
   const scrollRef = useRef<ScrollView>(null);
   const { id } = useLocalSearchParams<{ id?: string }>();
   const [type, setType] = useState<Transaction['type']>('expense');
@@ -146,14 +148,14 @@ export default function AddTransactionScreen() {
             <ThemedText type="smallBold">Type</ThemedText>
             <ThemedView style={styles.typeRow}>
               <Pressable
-                style={[styles.typeButton, type === 'income' && styles.typeButtonActive]}
+                style={[styles.typeButton, { borderColor: theme.primary }, type === 'income' && styles.typeButtonActive, type === 'income' && { backgroundColor: theme.primary }]}
                 onPress={() => setType('income')}>
                 <ThemedText type="smallBold" style={type === 'income' ? styles.activeText : undefined}>
                   Income
                 </ThemedText>
               </Pressable>
               <Pressable
-                style={[styles.typeButton, type === 'expense' && styles.typeButtonActive]}
+                style={[styles.typeButton, { borderColor: theme.primary }, type === 'expense' && styles.typeButtonActive, type === 'expense' && { backgroundColor: theme.primary }]}
                 onPress={() => setType('expense')}>
                 <ThemedText type="smallBold" style={type === 'expense' ? styles.activeText : undefined}>
                   Expense
@@ -177,7 +179,7 @@ export default function AddTransactionScreen() {
                   <Pressable
                     key={option}
                     onPress={() => setCategory(option)}
-                    style={[styles.categoryChip, category === option && styles.typeButtonActive]}>
+                    style={[styles.categoryChip, { borderColor: theme.accent }, category === option && styles.typeButtonActive, category === option && { backgroundColor: theme.primary }]}>
                     <ThemedText type="small" style={category === option ? styles.activeText : undefined}>{option}</ThemedText>
                   </Pressable>
                 ))}
@@ -209,7 +211,7 @@ export default function AddTransactionScreen() {
 
             {error ? <ThemedText themeColor="textSecondary" style={styles.errorText}>{error}</ThemedText> : null}
 
-            <Pressable style={styles.primaryButton} onPress={handleSave} disabled={loading}>
+            <Pressable style={[styles.primaryButton, { backgroundColor: theme.primary }]} onPress={handleSave} disabled={loading}>
               {loading ? <ActivityIndicator color="#ffffff" /> : <ThemedText type="smallBold" style={styles.buttonText}>{id ? 'Update transaction' : 'Save transaction'}</ThemedText>}
             </Pressable>
           </ThemedView>

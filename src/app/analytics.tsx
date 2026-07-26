@@ -7,6 +7,7 @@ import { PieChart } from 'react-native-chart-kit';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScreenNav } from '@/components/screen-nav';
+import { useAppTheme } from '@/components/app-theme-provider';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -16,9 +17,8 @@ import { auth } from '@/services/firebase';
 import { refreshWalletData } from '@/services/syncService';
 
 const colors = ['#F57C00', '#0F9D58', '#FFC107', '#D32F2F', '#2485A8'];
-const money = (value: number) => `LKR ${value.toLocaleString('en-LK')}`;
-
 export default function AnalyticsScreen() {
+  const { formatCurrency: money, theme } = useAppTheme();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [period, setPeriod] = useState<'Week' | 'Month' | 'Year'>('Month');
   const [periodOffset, setPeriodOffset] = useState(0);
@@ -62,9 +62,9 @@ export default function AnalyticsScreen() {
   }, [selectedPeriod, transactions]);
 
   const pieData = [
-    { name: 'Income', amount: data.income, color: '#2E7D32' },
-    { name: 'Expenses', amount: data.expense, color: '#D32F2F' },
-    { name: 'Savings', amount: Math.max(data.savings, 0), color: '#FFC107' },
+    { name: 'Income', amount: data.income, color: theme.success },
+    { name: 'Expenses', amount: data.expense, color: theme.expense },
+    { name: 'Savings', amount: Math.max(data.savings, 0), color: theme.accent },
   ].map((item) => ({
     ...item,
     legendFontColor: '#212121',
@@ -87,7 +87,7 @@ export default function AnalyticsScreen() {
             </Pressable>
           </View>
           {showDatePicker ? (
-            <View style={styles.pickerContainer}>
+            <View style={[styles.pickerContainer, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
               <DateTimePicker
                 value={new Date(`${reportDate}T12:00:00`)}
                 mode="date"
@@ -96,14 +96,14 @@ export default function AnalyticsScreen() {
               />
               {Platform.OS === 'ios' ? (
                 <Pressable style={styles.pickerDone} onPress={() => setShowDatePicker(false)}>
-                  <ThemedText type="smallBold" style={styles.pickerDoneText}>Done</ThemedText>
+                  <ThemedText type="smallBold" style={[styles.pickerDoneText, { color: theme.primary }]}>Done</ThemedText>
                 </Pressable>
               ) : null}
             </View>
           ) : null}
-          <View style={styles.periods}>
+          <View style={[styles.periods, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
             {(['Week', 'Month', 'Year'] as const).map((item) => (
-              <Pressable key={item} onPress={() => { setPeriod(item); setPeriodOffset(0); }} style={[styles.period, period === item && styles.periodActive]}>
+              <Pressable key={item} onPress={() => { setPeriod(item); setPeriodOffset(0); }} style={[styles.period, period === item && styles.periodActive, period === item && { backgroundColor: theme.primary }]}>
                 <ThemedText type="smallBold" style={period === item ? styles.white : styles.periodText}>{item}</ThemedText>
               </Pressable>
             ))}
@@ -118,14 +118,14 @@ export default function AnalyticsScreen() {
             </Pressable>
           </View>
           <View style={styles.metrics}>
-            <Metric label="Income" value={data.income} color="#2E7D32" />
-            <Metric label="Expense" value={data.expense} color="#D32F2F" />
-            <Metric label="Savings" value={data.savings} color="#F57C00" />
+            <Metric label="Income" value={data.income} color={theme.success} />
+            <Metric label="Expense" value={data.expense} color={theme.expense} />
+            <Metric label="Savings" value={data.savings} color={theme.accent} />
           </View>
-          <View style={styles.card} onLayout={(event) => setChartWidth(Math.max(280, event.nativeEvent.layout.width - 32))}>
+          <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]} onLayout={(event) => setChartWidth(Math.max(280, event.nativeEvent.layout.width - 32))}>
             <ThemedText type="smallBold" style={styles.cardTitle}>Income, expenses & savings</ThemedText>
             {!hasReportData ? (
-              <View style={styles.empty}><Ionicons name="pie-chart-outline" size={36} color="#0F9D58" /><ThemedText themeColor="textSecondary">No transactions recorded for this {period.toLowerCase()}.</ThemedText></View>
+              <View style={styles.empty}><Ionicons name="pie-chart-outline" size={36} color={theme.primary} /><ThemedText themeColor="textSecondary">No transactions recorded for this {period.toLowerCase()}.</ThemedText></View>
             ) : <>
               <PieChart
                 data={pieData}
@@ -134,7 +134,7 @@ export default function AnalyticsScreen() {
                 accessor="amount"
                 backgroundColor="transparent"
                 paddingLeft="8"
-                chartConfig={{ color: (opacity = 1) => `rgba(15, 157, 88, ${opacity})` }}
+                chartConfig={{ color: () => theme.primary }}
                 absolute
               />
               {data.categories.length > 0 ? <ThemedText type="smallBold" style={styles.breakdownTitle}>Expense categories</ThemedText> : null}
@@ -202,7 +202,8 @@ function getPeriodRange(period: 'Week' | 'Month' | 'Year', offset: number, repor
 }
 
 function Metric({ label, value, color }: { label: string; value: number; color: string }) {
-  return <View style={styles.metric}><ThemedText themeColor="textSecondary" style={styles.metricLabel}>{label}</ThemedText><ThemedText type="smallBold" style={{ color }}>{money(value)}</ThemedText></View>;
+  const { formatCurrency: money, theme } = useAppTheme();
+  return <View style={[styles.metric, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}><ThemedText themeColor="textSecondary" style={styles.metricLabel}>{label}</ThemedText><ThemedText type="smallBold" style={{ color }}>{money(value)}</ThemedText></View>;
 }
 
 const styles = StyleSheet.create({

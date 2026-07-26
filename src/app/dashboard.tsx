@@ -6,6 +6,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScreenNav } from '@/components/screen-nav';
+import { useAppTheme } from '@/components/app-theme-provider';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -15,10 +16,9 @@ import { getCurrentUserName } from '@/services/authService';
 import { auth } from '@/services/firebase';
 import { refreshWalletData } from '@/services/syncService';
 
-const currency = (value: number) => `LKR ${value.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
 export default function DashboardScreen() {
   const router = useRouter();
+  const { formatCurrency: currency, theme } = useAppTheme();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [greeting, setGreeting] = useState(getSriLankaGreeting);
   const [userName, setUserName] = useState(auth.currentUser?.displayName ?? '');
@@ -77,7 +77,7 @@ export default function DashboardScreen() {
 
   const firstName = userName.split(' ')[0] || 'there';
   const quickActions = [
-    ['Add transaction', 'add-circle-outline', '/add-transaction', '#E3F4E7', '#0F9D58'],
+    ['Add transaction', 'add-circle-outline', '/add-transaction', `${theme.primary}18`, theme.primary],
     ['Budgets', 'calendar-outline', '/budget', '#FFF0DC', '#F57C00'],
     ['Savings', 'shield-checkmark-outline', '/savings', '#FFF4CD', '#B77900'],
     ['Spending report', 'pie-chart-outline', '/analytics', '#FFE6DF', '#D32F2F'],
@@ -87,7 +87,7 @@ export default function DashboardScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.hero}>
+          <View style={[styles.hero, { backgroundColor: theme.primary }]}>
             <View style={styles.heroTop}>
               <View>
                 <ThemedText style={styles.greeting}>{greeting},</ThemedText>
@@ -110,15 +110,15 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          <View style={styles.summaryCard}>
+          <View style={[styles.summaryCard, { backgroundColor: theme.backgroundElement }]}>
             <View style={styles.summaryItem}>
               <ThemedText style={styles.summaryLabel}>Income</ThemedText>
-              <ThemedText style={styles.income}>{currency(summary.income)}</ThemedText>
+              <ThemedText style={[styles.income, { color: theme.success }]}>{currency(summary.income)}</ThemedText>
             </View>
             <View style={styles.divider} />
             <View style={styles.summaryItem}>
               <ThemedText style={styles.summaryLabel}>Expenses</ThemedText>
-              <ThemedText style={styles.expense}>{currency(summary.expense)}</ThemedText>
+              <ThemedText style={[styles.expense, { color: theme.expense }]}>{currency(summary.expense)}</ThemedText>
             </View>
           </View>
 
@@ -135,10 +135,10 @@ export default function DashboardScreen() {
           </View>
 
           <SectionTitle title="Recent transactions" action="See all" onPress={() => router.push('/transactions' as never)} />
-          <View style={styles.listCard}>
+          <View style={[styles.listCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
             {summary.recent.length === 0 ? (
               <View style={styles.empty}>
-                <Ionicons name="receipt-outline" size={30} color="#0F9D58" />
+                <Ionicons name="receipt-outline" size={30} color={theme.primary} />
                 <ThemedText type="smallBold">No transactions yet</ThemedText>
                 <ThemedText themeColor="textSecondary" style={styles.center}>Tap the plus button to add your first one.</ThemedText>
               </View>
@@ -156,13 +156,13 @@ export default function DashboardScreen() {
           statusBarTranslucent
           onRequestClose={() => setNotificationOpen(false)}>
           <Pressable style={styles.modalBackdrop} onPress={() => setNotificationOpen(false)}>
-            <Pressable style={styles.notificationCard} onPress={(event) => event.stopPropagation()}>
+            <Pressable style={[styles.notificationCard, { backgroundColor: theme.backgroundElement }]} onPress={(event) => event.stopPropagation()}>
               <View style={styles.notificationHeader}>
                 <View style={[styles.alertIcon, monthlySummary.overspent ? styles.warningIcon : styles.safeIcon]}>
                   <Ionicons
                     name={monthlySummary.overspent ? 'warning-outline' : 'checkmark-circle-outline'}
                     size={26}
-                    color={monthlySummary.overspent ? '#D32F2F' : '#2E7D32'}
+                    color={monthlySummary.overspent ? theme.expense : theme.success}
                   />
                 </View>
                 <View style={styles.notificationTitleCopy}>
@@ -183,13 +183,13 @@ export default function DashboardScreen() {
               </ThemedText>
 
               <View style={styles.notificationFigures}>
-                <NotificationFigure label="Income" value={monthlySummary.income} color="#2E7D32" />
+                <NotificationFigure label="Income" value={monthlySummary.income} color={theme.success} />
                 <View style={styles.figureDivider} />
-                <NotificationFigure label="Expenses" value={monthlySummary.expense} color="#D32F2F" />
+                <NotificationFigure label="Expenses" value={monthlySummary.expense} color={theme.expense} />
               </View>
 
               <Pressable
-                style={styles.viewReportButton}
+                style={[styles.viewReportButton, { backgroundColor: theme.primary }]}
                 onPress={() => {
                   setNotificationOpen(false);
                   router.push('/analytics' as never);
@@ -240,13 +240,15 @@ function getSriLankaMonth() {
 }
 
 function SectionTitle({ title, action, onPress }: { title: string; action?: string; onPress?: () => void }) {
+  const { theme } = useAppTheme();
   return <View style={styles.sectionTitle}>
     <ThemedText type="smallBold" style={styles.sectionHeading}>{title}</ThemedText>
-    {action ? <Pressable onPress={onPress}><ThemedText style={styles.seeAll}>{action}</ThemedText></Pressable> : null}
+    {action ? <Pressable onPress={onPress}><ThemedText style={[styles.seeAll, { color: theme.primary }]}>{action}</ThemedText></Pressable> : null}
   </View>;
 }
 
 function NotificationFigure({ label, value, color }: { label: string; value: number; color: string }) {
+  const { formatCurrency: currency } = useAppTheme();
   return <View style={styles.figure}>
     <ThemedText themeColor="textSecondary" style={styles.figureLabel}>{label}</ThemedText>
     <ThemedText type="smallBold" style={[styles.figureValue, { color }]}>{currency(value)}</ThemedText>
@@ -254,16 +256,17 @@ function NotificationFigure({ label, value, color }: { label: string; value: num
 }
 
 function TransactionRow({ item, last }: { item: Transaction; last: boolean }) {
+  const { formatCurrency: currency, theme } = useAppTheme();
   const positive = item.type === 'income';
   return <View style={[styles.transactionRow, !last && styles.rowBorder]}>
     <View style={[styles.transactionIcon, { backgroundColor: positive ? '#E3F4E7' : '#FFE6DF' }]}>
-      <Ionicons name={positive ? 'cash-outline' : 'cart-outline'} size={21} color={positive ? '#2E7D32' : '#F57C00'} />
+      <Ionicons name={positive ? 'cash-outline' : 'cart-outline'} size={21} color={positive ? theme.success : theme.secondary} />
     </View>
     <View style={styles.transactionCopy}>
       <ThemedText type="smallBold">{item.category}</ThemedText>
       <ThemedText themeColor="textSecondary" style={styles.transactionDate}>{item.transactionDate}</ThemedText>
     </View>
-    <ThemedText type="smallBold" style={{ color: positive ? '#2E7D32' : '#D32F2F' }}>
+    <ThemedText type="smallBold" style={{ color: positive ? theme.success : theme.expense }}>
       {positive ? '+' : '-'} {currency(item.amount)}
     </ThemedText>
   </View>;

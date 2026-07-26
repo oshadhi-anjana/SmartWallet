@@ -5,6 +5,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, TextInput,
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import BudgetProgressCard from '@/components/budget-progress-card';
+import { useAppTheme } from '@/components/app-theme-provider';
 import { DateField } from '@/components/date-field';
 import { ScreenNav } from '@/components/screen-nav';
 import { ThemedText } from '@/components/themed-text';
@@ -21,6 +22,7 @@ import { createId } from '@/utils/id';
 const categories = ['Food', 'Transport', 'Bills', 'Shopping', 'Entertainment', 'Health'];
 
 export default function BudgetScreen() {
+  const { formatCurrency, currency, theme } = useAppTheme();
   const currentMonth = new Date().toISOString().slice(0, 7);
   const [month, setMonth] = useState(currentMonth);
   const [filterMonth, setFilterMonth] = useState(currentMonth);
@@ -162,14 +164,14 @@ export default function BudgetScreen() {
               <ThemedText type="subtitle" style={styles.pageTitle}>Monthly Budget</ThemedText>
               <ThemedText themeColor="textSecondary" style={styles.pageSubtitle}>Plan your spending by category</ThemedText>
             </View>
-            <Pressable style={styles.addButton} onPress={startAdd}>
+            <Pressable style={[styles.addButton, { backgroundColor: theme.primary }]} onPress={startAdd}>
               <Ionicons name="add" size={22} color="#FFFFFF" />
             </Pressable>
           </View>
 
           <ThemedView type="backgroundElement" style={styles.filterCard}>
             <View style={styles.filterHeading}>
-              <View style={styles.filterIcon}><Ionicons name="calendar-outline" size={18} color="#0F9D58" /></View>
+              <View style={[styles.filterIcon, { backgroundColor: `${theme.primary}18` }]}><Ionicons name="calendar-outline" size={18} color={theme.primary} /></View>
               <View>
                 <ThemedText type="smallBold">Budget month</ThemedText>
                 <ThemedText themeColor="textSecondary" style={styles.hint}>View and manage one month at a time</ThemedText>
@@ -178,13 +180,13 @@ export default function BudgetScreen() {
             <DateField value={filterMonth} onChange={setFilterMonth} mode="month" placeholder="Select month" />
           </ThemedView>
 
-          <View style={styles.summaryCard}>
+          <View style={[styles.summaryCard, { backgroundColor: theme.primary }]}>
             <ThemedText themeColor="textSecondary" style={styles.summaryLabel}>Total monthly budget</ThemedText>
-            <ThemedText type="subtitle" style={styles.summaryTotal}>LKR {monthTotals.budget.toLocaleString('en-LK')}</ThemedText>
+            <ThemedText type="subtitle" style={styles.summaryTotal}>{formatCurrency(monthTotals.budget)}</ThemedText>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryRow}>
-              <View><ThemedText themeColor="textSecondary" style={styles.summaryLabel}>Spent</ThemedText><ThemedText type="smallBold" style={styles.spent}>LKR {monthTotals.spent.toLocaleString('en-LK')}</ThemedText></View>
-              <View style={styles.summaryRight}><ThemedText themeColor="textSecondary" style={styles.summaryLabel}>Remaining</ThemedText><ThemedText type="smallBold" style={{ color: monthTotals.remaining < 0 ? '#FFD2C9' : '#C9F4DA' }}>LKR {monthTotals.remaining.toLocaleString('en-LK')}</ThemedText></View>
+              <View><ThemedText themeColor="textSecondary" style={styles.summaryLabel}>Spent</ThemedText><ThemedText type="smallBold" style={styles.spent}>{formatCurrency(monthTotals.spent)}</ThemedText></View>
+              <View style={styles.summaryRight}><ThemedText themeColor="textSecondary" style={styles.summaryLabel}>Remaining</ThemedText><ThemedText type="smallBold" style={{ color: monthTotals.remaining < 0 ? '#FFD2C9' : '#C9F4DA' }}>{formatCurrency(monthTotals.remaining)}</ThemedText></View>
             </View>
           </View>
 
@@ -195,10 +197,10 @@ export default function BudgetScreen() {
 
           {filteredBudgets.length === 0 ? (
             <ThemedView type="backgroundElement" style={styles.emptyCard}>
-              <Ionicons name="calendar-outline" size={30} color="#0F9D58" />
+              <Ionicons name="calendar-outline" size={30} color={theme.primary} />
               <ThemedText type="smallBold">No budgets for {filterMonth}</ThemedText>
               <ThemedText themeColor="textSecondary" style={styles.emptyText}>Create your first category limit for this month.</ThemedText>
-              <Pressable style={styles.emptyAddButton} onPress={startAdd}><Ionicons name="add" size={18} color="#FFFFFF" /><ThemedText type="smallBold" style={styles.white}>Add budget</ThemedText></Pressable>
+              <Pressable style={[styles.emptyAddButton, { backgroundColor: theme.primary }]} onPress={startAdd}><Ionicons name="add" size={18} color="#FFFFFF" /><ThemedText type="smallBold" style={styles.white}>Add budget</ThemedText></Pressable>
             </ThemedView>
           ) : filteredBudgets.map((item) => (
             <ThemedView key={item.id} style={styles.budgetItem}>
@@ -220,7 +222,7 @@ export default function BudgetScreen() {
 
         <Modal visible={formOpen} transparent animationType="slide" statusBarTranslucent onRequestClose={cancelEdit}>
           <Pressable style={styles.modalBackdrop} onPress={cancelEdit}>
-            <Pressable style={styles.formModal} onPress={(event) => event.stopPropagation()}>
+            <Pressable style={[styles.formModal, { backgroundColor: theme.backgroundElement }]} onPress={(event) => event.stopPropagation()}>
               <View style={styles.formHeading}>
                 <View>
                   <ThemedText type="subtitle" style={styles.formModalTitle}>{editingBudget ? 'Edit budget' : 'Add budget'}</ThemedText>
@@ -240,26 +242,26 @@ export default function BudgetScreen() {
                       key={item}
                       disabled={unavailable}
                       onPress={() => setCategory(item)}
-                      style={[styles.categoryOption, category === item && styles.chipActive, unavailable && styles.categoryDisabled]}>
+                      style={[styles.categoryOption, category === item && styles.chipActive, category === item && { backgroundColor: theme.primary, borderColor: theme.primary }, unavailable && styles.categoryDisabled]}>
                       <ThemedText type="smallBold" style={category === item ? styles.white : unavailable ? styles.disabledText : undefined}>{item}</ThemedText>
                       {allocated ? (
                         <ThemedText style={[styles.allocatedCategoryText, category === item && styles.white]}>
-                          LKR {allocated.limitAmount.toLocaleString('en-LK')} allocated
+                          {formatCurrency(allocated.limitAmount)} allocated
                         </ThemedText>
-                      ) : <ThemedText style={styles.availableText}>Available</ThemedText>}
+                      ) : <ThemedText style={[styles.availableText, { color: theme.primary }]}>Available</ThemedText>}
                     </Pressable>
                   );
                 })}</View>
                 {availableCategories.length === 0 ? (
                   <View style={styles.allAddedBox}>
-                    <Ionicons name="checkmark-circle-outline" size={19} color="#2E7D32" />
+                    <Ionicons name="checkmark-circle-outline" size={19} color={theme.success} />
                     <ThemedText style={styles.allAddedText}>All categories already have budgets for this month.</ThemedText>
                   </View>
                 ) : null}
-                <ThemedText type="smallBold">Monthly limit (LKR)</ThemedText>
+                <ThemedText type="smallBold">Monthly limit ({currency})</ThemedText>
                 <TextInput style={styles.input} value={limit} onChangeText={setLimit} keyboardType="decimal-pad" placeholder="e.g. 25,000" autoFocus={!editingBudget} />
                 {error ? <View style={styles.errorBox}><Ionicons name="alert-circle-outline" size={18} color="#D32F2F" /><ThemedText style={styles.error}>{error}</ThemedText></View> : null}
-                <Pressable style={[styles.primaryButton, availableCategories.length === 0 && !editingBudget && styles.buttonDisabled]} onPress={handleSave} disabled={availableCategories.length === 0 && !editingBudget}>
+                <Pressable style={[styles.primaryButton, { backgroundColor: theme.primary }, availableCategories.length === 0 && !editingBudget && styles.buttonDisabled]} onPress={handleSave} disabled={availableCategories.length === 0 && !editingBudget}>
                   <ThemedText type="smallBold" style={styles.white}>{editingBudget ? 'Update budget' : 'Save budget'}</ThemedText>
                 </Pressable>
               </ScrollView>
@@ -269,14 +271,14 @@ export default function BudgetScreen() {
 
         <Modal visible={Boolean(budgetToDelete)} transparent animationType="fade" statusBarTranslucent onRequestClose={() => !isDeleting && setBudgetToDelete(null)}>
           <Pressable style={styles.modalBackdrop} onPress={() => !isDeleting && setBudgetToDelete(null)}>
-            <Pressable style={styles.deleteModal} onPress={(event) => event.stopPropagation()}>
+            <Pressable style={[styles.deleteModal, { backgroundColor: theme.backgroundElement }]} onPress={(event) => event.stopPropagation()}>
               <View style={styles.deleteIcon}><Ionicons name="trash-outline" size={29} color="#D32F2F" /></View>
               <ThemedText type="subtitle" style={styles.deleteTitle}>Delete monthly budget?</ThemedText>
               <ThemedText themeColor="textSecondary" style={styles.deleteMessage}>This budget will be permanently removed from your device and database.</ThemedText>
               {budgetToDelete ? (
                 <View style={styles.deleteSummary}>
                   <View><ThemedText type="smallBold">{budgetToDelete.category}</ThemedText><ThemedText themeColor="textSecondary" style={styles.hint}>{budgetToDelete.month}</ThemedText></View>
-                  <ThemedText type="smallBold" style={styles.limitValue}>LKR {budgetToDelete.limitAmount.toLocaleString('en-LK')}</ThemedText>
+                  <ThemedText type="smallBold" style={[styles.limitValue, { color: theme.primary }]}>{formatCurrency(budgetToDelete.limitAmount)}</ThemedText>
                 </View>
               ) : null}
               <View style={styles.modalActions}>

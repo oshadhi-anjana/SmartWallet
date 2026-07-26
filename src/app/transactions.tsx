@@ -6,6 +6,7 @@ import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleShe
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScreenNav } from '@/components/screen-nav';
+import { useAppTheme } from '@/components/app-theme-provider';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -15,10 +16,9 @@ import { Transaction } from '@/models/Transaction';
 import { auth } from '@/services/firebase';
 import { deleteTransactionEverywhere, refreshWalletData, syncPendingTransactions } from '@/services/syncService';
 
-const money = (value: number) => `LKR ${value.toLocaleString('en-LK')}`;
-
 export default function TransactionsScreen() {
   const router = useRouter();
+  const { formatCurrency: money, theme } = useAppTheme();
   const isOnline = useNetworkStatus();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
@@ -87,7 +87,7 @@ export default function TransactionsScreen() {
           <View style={styles.titleRow}>
             <ThemedText type="subtitle" style={styles.title}>Transactions</ThemedText>
             <Pressable
-              style={[styles.search, searchVisible && styles.searchActive]}
+              style={[styles.search, { backgroundColor: theme.backgroundElement, borderColor: theme.border }, searchVisible && styles.searchActive, searchVisible && { backgroundColor: theme.primary, borderColor: theme.primary }]}
               accessibilityLabel={searchVisible ? 'Close transaction search' : 'Search transactions'}
               onPress={() => {
                 setSearchVisible((value) => !value);
@@ -97,7 +97,7 @@ export default function TransactionsScreen() {
             </Pressable>
           </View>
           {searchVisible ? (
-            <View style={styles.searchField}>
+            <View style={[styles.searchField, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
               <Ionicons name="search-outline" size={20} color="#68756F" />
               <TextInput
                 autoFocus
@@ -115,21 +115,21 @@ export default function TransactionsScreen() {
               ) : null}
             </View>
           ) : null}
-          <View style={styles.filters}>
+          <View style={[styles.filters, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
             {(['all', 'income', 'expense'] as const).map((item) => (
-              <Pressable key={item} onPress={() => setFilter(item)} style={[styles.filter, filter === item && styles.filterActive]}>
+              <Pressable key={item} onPress={() => setFilter(item)} style={[styles.filter, filter === item && styles.filterActive, filter === item && { backgroundColor: theme.primary }]}>
                 <ThemedText type="smallBold" style={filter === item ? styles.filterActiveText : styles.filterText}>{item[0].toUpperCase() + item.slice(1)}</ThemedText>
               </Pressable>
             ))}
           </View>
           <View style={styles.dateHeading}>
             <ThemedText type="smallBold">Recent activity</ThemedText>
-            <Pressable onPress={retrySync}><ThemedText style={styles.sync}>{isSyncing ? 'Syncing…' : isOnline ? 'Sync now' : 'Offline'}</ThemedText></Pressable>
+            <Pressable onPress={retrySync}><ThemedText style={[styles.sync, { color: theme.primary }]}>{isSyncing ? 'Syncing…' : isOnline ? 'Sync now' : 'Offline'}</ThemedText></Pressable>
           </View>
 
           {visible.length === 0 ? (
-            <View style={styles.empty}>
-              <View style={styles.emptyIcon}><Ionicons name="receipt-outline" size={32} color="#0F9D58" /></View>
+            <View style={[styles.empty, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+              <View style={[styles.emptyIcon, { backgroundColor: `${theme.primary}18` }]}><Ionicons name="receipt-outline" size={32} color={theme.primary} /></View>
               <ThemedText type="smallBold">{normalizedQuery ? 'No matching transactions' : 'No transactions found'}</ThemedText>
               <ThemedText themeColor="textSecondary" style={styles.emptyText}>
                 {normalizedQuery ? 'Try another category, date, type, or amount.' : 'Use the plus button to record income or an expense.'}
@@ -138,23 +138,23 @@ export default function TransactionsScreen() {
           ) : visible.map((item) => {
             const income = item.type === 'income';
             return (
-              <View key={item.id} style={styles.row}>
+              <View key={item.id} style={[styles.row, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
                 <View style={styles.transactionMain}>
                   <View style={[styles.rowIcon, income ? styles.incomeIcon : styles.expenseIcon]}>
-                    <Ionicons name={income ? 'cash-outline' : 'cart-outline'} size={21} color={income ? '#2E7D32' : '#F57C00'} />
+                    <Ionicons name={income ? 'cash-outline' : 'cart-outline'} size={21} color={income ? theme.success : theme.secondary} />
                   </View>
                   <View style={styles.rowCopy}>
                     <ThemedText type="smallBold">{item.category}</ThemedText>
                     <ThemedText themeColor="textSecondary" style={styles.meta}>{item.description || item.transactionDate}</ThemedText>
-                    <ThemedText style={styles.status}>{getStatus(item.syncStatus, isOnline)}</ThemedText>
+                    <ThemedText style={[styles.status, { color: theme.primary }]}>{getStatus(item.syncStatus, isOnline)}</ThemedText>
                   </View>
                   <View style={styles.amountCopy}>
-                    <ThemedText type="smallBold" style={{ color: income ? '#2E7D32' : '#D32F2F' }}>{income ? '+' : '-'} {money(item.amount)}</ThemedText>
+                    <ThemedText type="smallBold" style={{ color: income ? theme.success : theme.expense }}>{income ? '+' : '-'} {money(item.amount)}</ThemedText>
                     <ThemedText themeColor="textSecondary" style={styles.meta}>{item.transactionDate}</ThemedText>
                   </View>
                 </View>
                 <View style={styles.rowActions}>
-                  <TransactionAction icon="eye-outline" label="View" color="#0F9D58" onPress={() => setTransactionToView(item)} />
+                  <TransactionAction icon="eye-outline" label="View" color={theme.primary} onPress={() => setTransactionToView(item)} />
                   <TransactionAction
                     icon="create-outline"
                     label="Edit"
@@ -164,8 +164,8 @@ export default function TransactionsScreen() {
                   <TransactionAction icon="trash-outline" label="Delete" color="#D32F2F" onPress={() => setTransactionToDelete(item)} />
                   {item.receiptUri ? (
                     <View style={styles.receiptBadge}>
-                      <Ionicons name="image-outline" size={14} color="#0F9D58" />
-                      <ThemedText style={styles.receiptBadgeText}>Receipt</ThemedText>
+                      <Ionicons name="image-outline" size={14} color={theme.primary} />
+                      <ThemedText style={[styles.receiptBadgeText, { color: theme.primary }]}>Receipt</ThemedText>
                     </View>
                   ) : null}
                 </View>
@@ -182,7 +182,7 @@ export default function TransactionsScreen() {
           statusBarTranslucent
           onRequestClose={() => setTransactionToView(null)}>
           <Pressable style={styles.modalBackdrop} onPress={() => setTransactionToView(null)}>
-            <Pressable style={styles.detailsModal} onPress={(event) => event.stopPropagation()}>
+            <Pressable style={[styles.detailsModal, { backgroundColor: theme.backgroundElement }]} onPress={(event) => event.stopPropagation()}>
               <View style={styles.detailsHeader}>
                 <View>
                   <ThemedText type="subtitle" style={styles.detailsTitle}>Transaction details</ThemedText>
@@ -200,7 +200,7 @@ export default function TransactionsScreen() {
                   nestedScrollEnabled>
                   <View style={styles.detailAmountCard}>
                     <ThemedText themeColor="textSecondary" style={styles.detailLabel}>{transactionToView.type === 'income' ? 'Income' : 'Expense'}</ThemedText>
-                    <ThemedText type="subtitle" style={{ color: transactionToView.type === 'income' ? '#2E7D32' : '#D32F2F' }}>
+                    <ThemedText type="subtitle" style={{ color: transactionToView.type === 'income' ? theme.success : theme.expense }}>
                       {transactionToView.type === 'income' ? '+' : '-'} {money(transactionToView.amount)}
                     </ThemedText>
                   </View>
@@ -227,7 +227,7 @@ export default function TransactionsScreen() {
                     </View>
                   )}
                   <Pressable
-                    style={styles.editDetailsButton}
+                    style={[styles.editDetailsButton, { backgroundColor: theme.primary }]}
                     onPress={() => {
                       const id = transactionToView.id;
                       setTransactionToView(null);
@@ -263,7 +263,7 @@ export default function TransactionsScreen() {
           statusBarTranslucent
           onRequestClose={() => !isDeleting && setTransactionToDelete(null)}>
           <Pressable style={styles.modalBackdrop} onPress={() => !isDeleting && setTransactionToDelete(null)}>
-            <Pressable style={styles.deleteModal} onPress={(event) => event.stopPropagation()}>
+            <Pressable style={[styles.deleteModal, { backgroundColor: theme.backgroundElement }]} onPress={(event) => event.stopPropagation()}>
               <View style={styles.deleteIcon}>
                 <Ionicons name="trash-outline" size={29} color="#D32F2F" />
               </View>
@@ -278,7 +278,7 @@ export default function TransactionsScreen() {
                     <ThemedText type="smallBold">{transactionToDelete.category}</ThemedText>
                     <ThemedText themeColor="textSecondary" style={styles.deleteDate}>{transactionToDelete.transactionDate}</ThemedText>
                   </View>
-                  <ThemedText type="smallBold" style={{ color: transactionToDelete.type === 'income' ? '#2E7D32' : '#D32F2F' }}>
+                  <ThemedText type="smallBold" style={{ color: transactionToDelete.type === 'income' ? theme.success : theme.expense }}>
                     {transactionToDelete.type === 'income' ? '+' : '-'} {money(transactionToDelete.amount)}
                   </ThemedText>
                 </View>

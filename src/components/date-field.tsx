@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from './themed-text';
+import { useAppTheme } from './app-theme-provider';
 
 type DateFieldProps = {
   value: string;
@@ -19,6 +20,7 @@ function toDate(value: string) {
 
 export function DateField({ value, onChange, mode = 'date', placeholder = 'Select date' }: DateFieldProps) {
   const [open, setOpen] = useState(false);
+  const { theme } = useAppTheme();
 
   function handleChange(event: DateTimePickerEvent, selected?: Date) {
     if (Platform.OS !== 'ios') setOpen(false);
@@ -33,9 +35,9 @@ export function DateField({ value, onChange, mode = 'date', placeholder = 'Selec
         accessibilityLabel={mode === 'month' ? 'Select month' : 'Select date'}
         accessibilityRole="button"
         onPress={() => setOpen(true)}
-        style={styles.field}>
+        style={[styles.field, { borderColor: theme.accent, backgroundColor: theme.backgroundElement }]}>
         <ThemedText style={!value ? styles.placeholder : undefined}>{value || placeholder}</ThemedText>
-        <Ionicons name="calendar-outline" size={22} color="#0F9D58" />
+        <Ionicons name="calendar-outline" size={22} color={theme.primary} />
       </Pressable>
       {open ? (
         <DateTimePicker
@@ -47,7 +49,7 @@ export function DateField({ value, onChange, mode = 'date', placeholder = 'Selec
       ) : null}
       {open && Platform.OS === 'ios' ? (
         <Pressable onPress={() => setOpen(false)} style={styles.done}>
-          <ThemedText type="smallBold" style={styles.doneText}>Done</ThemedText>
+          <ThemedText type="smallBold" style={[styles.doneText, { color: theme.primary }]}>Done</ThemedText>
         </Pressable>
       ) : null}
     </View>

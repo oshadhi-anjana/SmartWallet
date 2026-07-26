@@ -31,7 +31,12 @@ export function ScreenNav() {
             key={href}
             onPress={() => router.replace(href as never)}
             style={styles.item}>
-            <View style={[styles.iconContainer, isAdd && styles.addItem, (isAdd || active) && { backgroundColor: theme.primary }, active && !isAdd && styles.activeItem]}>
+            <View style={[
+              styles.iconContainer,
+              isAdd && styles.addItem,
+              active && !isAdd && styles.activeItem,
+              (isAdd || active) && { backgroundColor: theme.primary, shadowColor: theme.primary },
+            ]}>
               <Ionicons
                 name={(active ? activeIcon : icon) as never}
                 size={isAdd ? 29 : 22}

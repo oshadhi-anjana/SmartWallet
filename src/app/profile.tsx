@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useAppTheme } from '@/components/app-theme-provider';
+import { CurrencyCode, useAppTheme } from '@/components/app-theme-provider';
 import { ScreenNav } from '@/components/screen-nav';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -19,7 +19,7 @@ type Section = 'personal' | 'preferences' | 'theme' | 'notifications' | 'securit
 
 const menuItems: Array<[keyof typeof Ionicons.glyphMap, string, string, Exclude<Section, null>]> = [
   ['person-outline', 'Personal information', 'Name and account details', 'personal'],
-  ['options-outline', 'Preferences', 'Currency, region and language', 'preferences'],
+  ['options-outline', 'Preferences', 'Currency and region', 'preferences'],
   ['color-palette-outline', 'Theme', 'Choose your app appearance', 'theme'],
   ['notifications-outline', 'Notifications', 'Budget and spending alerts', 'notifications'],
   ['shield-checkmark-outline', 'Security', 'Biometrics and password', 'security'],
@@ -36,13 +36,11 @@ const themeLabels: Record<AppThemeName, string> = {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { theme, themeName, setThemeName } = useAppTheme();
+  const { theme, themeName, setThemeName, currency, setCurrency } = useAppTheme();
   const [section, setSection] = useState<Section>(null);
   const [userName, setUserName] = useState(auth.currentUser?.displayName ?? '');
   const [nameInput, setNameInput] = useState(userName);
-  const [currency, setCurrency] = useState('LKR');
   const [region, setRegion] = useState('Sri Lanka');
-  const [language, setLanguage] = useState('English');
   const [budgetAlerts, setBudgetAlerts] = useState(true);
   const [spendingAlerts, setSpendingAlerts] = useState(true);
   const [savingReminders, setSavingReminders] = useState(true);
@@ -52,13 +50,11 @@ export default function ProfileScreen() {
   useEffect(() => {
     getCurrentUserName().then((name) => { setUserName(name); setNameInput(name); }).catch(() => undefined);
     AsyncStorage.multiGet([
-      'smartwallet.currency', 'smartwallet.region', 'smartwallet.language',
+      'smartwallet.region',
       'smartwallet.alerts.budget', 'smartwallet.alerts.spending', 'smartwallet.alerts.savings',
     ]).then((entries) => {
       const values = Object.fromEntries(entries);
-      if (values['smartwallet.currency']) setCurrency(values['smartwallet.currency']);
       if (values['smartwallet.region']) setRegion(values['smartwallet.region']);
-      if (values['smartwallet.language']) setLanguage(values['smartwallet.language']);
       if (values['smartwallet.alerts.budget']) setBudgetAlerts(values['smartwallet.alerts.budget'] === 'true');
       if (values['smartwallet.alerts.spending']) setSpendingAlerts(values['smartwallet.alerts.spending'] === 'true');
       if (values['smartwallet.alerts.savings']) setSavingReminders(values['smartwallet.alerts.savings'] === 'true');
@@ -86,9 +82,7 @@ export default function ProfileScreen() {
 
   async function savePreferences() {
     await AsyncStorage.multiSet([
-      ['smartwallet.currency', currency],
       ['smartwallet.region', region],
-      ['smartwallet.language', language],
     ]);
     setMessage('Preferences saved on this device.');
   }
@@ -177,9 +171,8 @@ export default function ProfileScreen() {
                 </> : null}
 
                 {section === 'preferences' ? <>
-                  <ChoiceGroup label="Currency" values={['LKR', 'USD', 'EUR']} selected={currency} onSelect={setCurrency} />
+                  <ChoiceGroup label="Currency" values={['LKR', 'USD', 'EUR']} selected={currency} onSelect={(value) => setCurrency(value as CurrencyCode)} />
                   <ChoiceGroup label="Region" values={['Sri Lanka', 'Asia', 'Europe']} selected={region} onSelect={setRegion} />
-                  <ChoiceGroup label="Language" values={['English', 'Sinhala', 'Tamil']} selected={language} onSelect={setLanguage} />
                   <PrimaryButton label="Save preferences" onPress={savePreferences} color={theme.primary} />
                 </> : null}
 
