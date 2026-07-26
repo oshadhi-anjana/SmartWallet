@@ -1,9 +1,9 @@
-import { useNetInfo } from '@react-native-community/netinfo';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
 
 import { ScreenNav } from '@/components/screen-nav';
 import { ThemedText } from '@/components/themed-text';
@@ -13,123 +13,104 @@ import { getPendingTransactions, getTransactions } from '@/database/transactionQ
 import { Transaction } from '@/models/Transaction';
 import { auth } from '@/services/firebase';
 
+const currency = (value: number) => `LKR ${value.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 export default function DashboardScreen() {
   const router = useRouter();
-  const netInfo = useNetInfo();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
 
   useFocusEffect(useCallback(() => {
-    async function loadData() {
+    async function load() {
       const userId = auth.currentUser?.uid ?? 'local-user';
-      const [localTransactions, pendingTransactions] = await Promise.all([
-        getTransactions(userId),
-        getPendingTransactions(),
-      ]);
-
-      setTransactions(localTransactions);
-      setPendingCount(pendingTransactions.length);
+      const [items, pending] = await Promise.all([getTransactions(userId), getPendingTransactions()]);
+      setTransactions(items);
+      setPendingCount(pending.length);
     }
-
-    loadData();
+    load();
   }, []));
 
   const summary = useMemo(() => {
-    const totalIncome = transactions
-      .filter((item) => item.type === 'income')
-      .reduce((sum, item) => sum + item.amount, 0);
-    const totalExpense = transactions
-      .filter((item) => item.type === 'expense')
-      .reduce((sum, item) => sum + item.amount, 0);
-    const balance = totalIncome - totalExpense;
-    const monthlyBudget = 2000;
-    const budgetProgress = monthlyBudget > 0 ? Math.min(100, (totalExpense / monthlyBudget) * 100) : 0;
-
-    const categoryBreakdown = transactions
-      .filter((item) => item.type === 'expense')
-      .reduce<Record<string, number>>((group, item) => {
-        group[item.category] = (group[item.category] || 0) + item.amount;
-        return group;
-      }, {});
-
-    return {
-      totalIncome,
-      totalExpense,
-      balance,
-      budgetProgress,
-      categoryBreakdown,
-      recentTransactions: transactions.slice(0, 4),
-    };
+    const income = transactions.filter((item) => item.type === 'income').reduce((sum, item) => sum + item.amount, 0);
+    const expense = transactions.filter((item) => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0);
+    return { income, expense, balance: income - expense, recent: transactions.slice(0, 4) };
   }, [transactions]);
+
+  const firstName = auth.currentUser?.displayName?.split(' ')[0] || 'there';
+  const quickActions = [
+    ['Add expense', 'bag-remove-outline', '/add-transaction', '#FFE6DF', '#D32F2F'],
+    ['Add income', 'wallet-outline', '/add-transaction?type=income', '#E3F4E7', '#2E7D32'],
+    ['Budgets', 'calendar-outline', '/budget', '#FFF0DC', '#F57C00'],
+    ['Savings', 'shield-checkmark-outline', '/savings', '#FFF4CD', '#B77900'],
+  ] as const;
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.content}>
-          <ThemedText type="subtitle">Dashboard</ThemedText>
-          <ThemedText themeColor="textSecondary">Your offline-first money snapshot.</ThemedText>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.hero}>
+            <View style={styles.heroTop}>
+              <View>
+                <ThemedText style={styles.greeting}>Good Morning,</ThemedText>
+                <ThemedText type="subtitle" style={styles.name}>{firstName} 👋</ThemedText>
+              </View>
+              <View style={styles.notification}>
+                <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
+                {pendingCount > 0 ? <View style={styles.notificationDot} /> : null}
+              </View>
+            </View>
+            <ThemedText style={styles.balanceLabel}>Total balance</ThemedText>
+            <ThemedText style={styles.balance}>{currency(summary.balance)}</ThemedText>
+            <View style={styles.trendRow}>
+              <Ionicons name="trending-up" size={15} color="#FFFFFF" />
+              <ThemedText style={styles.trendText}>Your offline-first money snapshot</ThemedText>
+            </View>
+          </View>
 
-          <ThemedView type="backgroundElement" style={styles.card}>
-            <ThemedText type="smallBold">Current balance</ThemedText>
-            <ThemedText type="title">LKR {summary.balance.toFixed(2)}</ThemedText>
-            <ThemedText themeColor="textSecondary">
-              Income ${summary.totalIncome.toFixed(2)} • Expenses ${summary.totalExpense.toFixed(2)}
-            </ThemedText>
-          </ThemedView>
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryItem}>
+              <ThemedText style={styles.summaryLabel}>Income</ThemedText>
+              <ThemedText style={styles.income}>{currency(summary.income)}</ThemedText>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.summaryItem}>
+              <ThemedText style={styles.summaryLabel}>Expenses</ThemedText>
+              <ThemedText style={styles.expense}>{currency(summary.expense)}</ThemedText>
+            </View>
+          </View>
 
-          <ThemedView style={styles.grid}>
-            <ThemedView type="backgroundElement" style={styles.metricCard}>
-              <ThemedText type="smallBold">Income</ThemedText>
-              <ThemedText type="subtitle">LKR {summary.totalIncome.toFixed(2)}</ThemedText>
-            </ThemedView>
-            <ThemedView type="backgroundElement" style={styles.metricCard}>
-              <ThemedText type="smallBold">Expenses</ThemedText>
-              <ThemedText type="subtitle">LKR {summary.totalExpense.toFixed(2)}</ThemedText>
-            </ThemedView>
-          </ThemedView>
+          <SectionTitle title="Quick actions" />
+          <View style={styles.quickRow}>
+            {quickActions.map(([label, icon, href, background, color]) => (
+              <Pressable key={label} style={styles.quickItem} onPress={() => router.push(href as never)}>
+                <View style={[styles.quickIcon, { backgroundColor: background }]}>
+                  <Ionicons name={icon} size={23} color={color} />
+                </View>
+                <ThemedText style={styles.quickLabel}>{label}</ThemedText>
+              </Pressable>
+            ))}
+          </View>
 
-          <ThemedView type="backgroundElement" style={styles.card}>
-            <ThemedText type="smallBold">Monthly budget progress</ThemedText>
-            <ThemedText themeColor="textSecondary">{summary.budgetProgress.toFixed(0)}% of your monthly budget used</ThemedText>
-            <ThemedText type="smallBold">LKR {summary.totalExpense.toFixed(2)} / LKR 2000</ThemedText>
-          </ThemedView>
+          <SectionTitle title="Recent transactions" action="See all" onPress={() => router.push('/transactions' as never)} />
+          <View style={styles.listCard}>
+            {summary.recent.length === 0 ? (
+              <View style={styles.empty}>
+                <Ionicons name="receipt-outline" size={30} color="#0F9D58" />
+                <ThemedText type="smallBold">No transactions yet</ThemedText>
+                <ThemedText themeColor="textSecondary" style={styles.center}>Tap the plus button to add your first one.</ThemedText>
+              </View>
+            ) : summary.recent.map((item, index) => (
+              <TransactionRow key={item.id} item={item} last={index === summary.recent.length - 1} />
+            ))}
+          </View>
 
-          <ThemedView type="backgroundElement" style={styles.card}>
-            <ThemedText type="smallBold">Recent transactions</ThemedText>
-            {summary.recentTransactions.length === 0 ? (
-              <ThemedText themeColor="textSecondary">No local transactions yet.</ThemedText>
-            ) : (
-              summary.recentTransactions.map((item) => (
-                <ThemedView key={item.id} style={styles.rowItem}>
-                  <ThemedText type="smallBold">{item.category}</ThemedText>
-                  <ThemedText themeColor="textSecondary">{item.transactionDate}</ThemedText>
-                </ThemedView>
-              ))
-            )}
-          </ThemedView>
-
-          <ThemedView type="backgroundElement" style={styles.card}>
-            <ThemedText type="smallBold">Spending by category</ThemedText>
-            {Object.entries(summary.categoryBreakdown).length === 0 ? (
-              <ThemedText themeColor="textSecondary">No expense categories yet.</ThemedText>
-            ) : (
-              Object.entries(summary.categoryBreakdown).map(([category, value]) => (
-                <ThemedView key={category} style={styles.rowItem}>
-                  <ThemedText>{category}</ThemedText>
-                  <ThemedText themeColor="textSecondary">LKR {value.toFixed(2)}</ThemedText>
-                </ThemedView>
-              ))
-            )}
-          </ThemedView>
-
-          <ThemedView type="backgroundElement" style={styles.card}>
-            <ThemedText type="smallBold">Connection status</ThemedText>
-            <ThemedText themeColor="textSecondary">{netInfo.isConnected ? 'Online' : 'Offline'}</ThemedText>
-            <ThemedText type="smallBold">Pending sync: {pendingCount}</ThemedText>
-          </ThemedView>
-
-          <Pressable style={styles.primaryButton} onPress={() => router.push('/add-transaction' as never)}>
-            <ThemedText type="smallBold" style={styles.buttonText}>Add transaction</ThemedText>
+          <Pressable style={styles.reportCard} onPress={() => router.push('/analytics' as never)}>
+            <View style={styles.reportIcon}><Ionicons name="pie-chart-outline" size={24} color="#F57C00" /></View>
+            <View style={styles.reportCopy}>
+              <ThemedText type="smallBold">Spending reports</ThemedText>
+              <ThemedText themeColor="textSecondary" style={styles.reportText}>See where your money goes</ThemedText>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#68756F" />
           </Pressable>
         </ScrollView>
         <ScreenNav />
@@ -138,50 +119,53 @@ export default function DashboardScreen() {
   );
 }
 
+function SectionTitle({ title, action, onPress }: { title: string; action?: string; onPress?: () => void }) {
+  return <View style={styles.sectionTitle}>
+    <ThemedText type="smallBold" style={styles.sectionHeading}>{title}</ThemedText>
+    {action ? <Pressable onPress={onPress}><ThemedText style={styles.seeAll}>{action}</ThemedText></Pressable> : null}
+  </View>;
+}
+
+function TransactionRow({ item, last }: { item: Transaction; last: boolean }) {
+  const positive = item.type === 'income';
+  return <View style={[styles.transactionRow, !last && styles.rowBorder]}>
+    <View style={[styles.transactionIcon, { backgroundColor: positive ? '#E3F4E7' : '#FFE6DF' }]}>
+      <Ionicons name={positive ? 'cash-outline' : 'cart-outline'} size={21} color={positive ? '#2E7D32' : '#F57C00'} />
+    </View>
+    <View style={styles.transactionCopy}>
+      <ThemedText type="smallBold">{item.category}</ThemedText>
+      <ThemedText themeColor="textSecondary" style={styles.transactionDate}>{item.transactionDate}</ThemedText>
+    </View>
+    <ThemedText type="smallBold" style={{ color: positive ? '#2E7D32' : '#D32F2F' }}>
+      {positive ? '+' : '-'} {currency(item.amount)}
+    </ThemedText>
+  </View>;
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-    alignSelf: 'center',
-    width: '100%',
-  },
-  content: {
-    gap: Spacing.three,
-    paddingVertical: Spacing.four,
-  },
-  card: {
-    borderRadius: Spacing.three,
-    padding: Spacing.three,
-    gap: Spacing.one,
-  },
-  grid: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-  },
-  metricCard: {
-    flex: 1,
-    borderRadius: Spacing.two,
-    padding: Spacing.three,
-    gap: Spacing.one,
-  },
-  rowItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: Spacing.one,
-  },
-  primaryButton: {
-    backgroundColor: '#0F9D58',
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 999,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#ffffff',
-  },
+  container: { flex: 1 },
+  safeArea: { flex: 1, maxWidth: MaxContentWidth, alignSelf: 'center', width: '100%' },
+  content: { paddingHorizontal: Spacing.three, paddingTop: 8, paddingBottom: BottomTabInset + 105, gap: 16 },
+  hero: { backgroundColor: '#078447', borderRadius: 26, padding: 20, minHeight: 190, overflow: 'hidden' },
+  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 23 },
+  greeting: { color: '#FFFFFF', fontSize: 14 }, name: { color: '#FFFFFF', fontSize: 22, lineHeight: 29 },
+  notification: { width: 42, height: 42, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' },
+  notificationDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#F57C00', position: 'absolute', right: 8, top: 7 },
+  balanceLabel: { color: '#DDF5E8', fontSize: 13 }, balance: { color: '#FFFFFF', fontSize: 29, lineHeight: 38, fontWeight: '800', marginVertical: 2 },
+  trendRow: { flexDirection: 'row', alignItems: 'center', gap: 5 }, trendText: { color: '#E5F7ED', fontSize: 12 },
+  summaryCard: { marginTop: -42, marginHorizontal: 12, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16, flexDirection: 'row', elevation: 5, shadowColor: '#123D2B', shadowOpacity: 0.12, shadowRadius: 10 },
+  summaryItem: { flex: 1 }, summaryLabel: { fontSize: 12, color: '#68756F', marginBottom: 5 }, income: { color: '#2E7D32', fontWeight: '800', fontSize: 15 }, expense: { color: '#D32F2F', fontWeight: '800', fontSize: 15 },
+  divider: { width: 1, backgroundColor: '#E9E7DF', marginHorizontal: 16 },
+  sectionTitle: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 3 },
+  sectionHeading: { fontSize: 16 }, seeAll: { color: '#0F9D58', fontSize: 13, fontWeight: '700' },
+  quickRow: { flexDirection: 'row', justifyContent: 'space-between' }, quickItem: { width: '23%', alignItems: 'center', gap: 7 },
+  quickIcon: { width: 50, height: 50, borderRadius: 17, alignItems: 'center', justifyContent: 'center' }, quickLabel: { fontSize: 11, lineHeight: 14, textAlign: 'center' },
+  listCard: { backgroundColor: '#FFFFFF', borderRadius: 20, paddingHorizontal: 14, borderWidth: 1, borderColor: '#ECE9DF' },
+  transactionRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center' }, rowBorder: { borderBottomWidth: 1, borderBottomColor: '#F0EEE8' },
+  transactionIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  transactionCopy: { flex: 1, paddingHorizontal: 11 }, transactionDate: { fontSize: 11, lineHeight: 16 },
+  empty: { alignItems: 'center', padding: 26, gap: 5 }, center: { textAlign: 'center', fontSize: 13 },
+  reportCard: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 14, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ECE9DF' },
+  reportIcon: { width: 45, height: 45, borderRadius: 15, backgroundColor: '#FFF0DC', alignItems: 'center', justifyContent: 'center' },
+  reportCopy: { flex: 1, paddingHorizontal: 12 }, reportText: { fontSize: 12 },
 });
