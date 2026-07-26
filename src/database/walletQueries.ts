@@ -24,6 +24,21 @@ export async function getBudgets(userId: string) {
   );
 }
 
+export async function getPendingBudgets() {
+  const db = await getInitializedDatabase();
+  return db.getAllAsync<Budget>(
+    `SELECT id, user_id AS userId, category, month, limit_amount AS limitAmount,
+      spent_amount AS spentAmount, sync_status AS syncStatus,
+      created_at AS createdAt, updated_at AS updatedAt
+     FROM budgets WHERE sync_status IN ('pending', 'failed')`
+  );
+}
+
+export async function updateBudgetSyncStatus(id: string, syncStatus: Budget['syncStatus']) {
+  const db = await getInitializedDatabase();
+  await db.runAsync('UPDATE budgets SET sync_status = ? WHERE id = ?', syncStatus, id);
+}
+
 export async function deleteBudget(id: string) {
   const db = await getInitializedDatabase();
   await db.runAsync('DELETE FROM budgets WHERE id = ?', id);

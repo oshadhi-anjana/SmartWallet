@@ -6,9 +6,11 @@ import {
     markTransactionFailed,
     markTransactionSynced,
 } from '../database/transactionQueries';
+import { deleteBudget, getPendingBudgets, updateBudgetSyncStatus } from '../database/walletQueries';
 import { firestore } from './firebase';
 
 let syncInProgress = false;
+let budgetSyncInProgress = false;
 
 export async function deleteTransactionEverywhere(userId: string, transactionId: string) {
   if (userId !== 'local-user') {
@@ -23,6 +25,38 @@ export async function deleteTransactionEverywhere(userId: string, transactionId:
   }
 
   await deleteTransaction(transactionId);
+}
+
+export async function deleteBudgetEverywhere(userId: string, budgetId: string) {
+  if (userId !== 'local-user') {
+    await deleteDoc(doc(firestore, 'users', userId, 'budgets', budgetId));
+  }
+  await deleteBudget(budgetId);
+}
+
+export async function syncPendingBudgets() {
+  if (budgetSyncInProgress) return;
+  budgetSyncInProgress = true;
+
+  try {
+    const budgets = await getPendingBudgets();
+    for (const budget of budgets) {
+      if (budget.userId === 'local-user') continue;
+      try {
+        await setDoc(
+          doc(firestore, 'users', budget.userId, 'budgets', budget.id),
+          { ...budget, syncStatus: 'synced' },
+          { merge: true }
+        );
+        await updateBudgetSyncStatus(budget.id, 'synced');
+      } catch (error) {
+        console.error('Failed to sync budget', budget.id, error);
+        await updateBudgetSyncStatus(budget.id, 'failed');
+      }
+    }
+  } finally {
+    budgetSyncInProgress = false;
+  }
 }
 
 export async function syncPendingTransactions() {

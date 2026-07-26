@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { syncPendingTransactions } from '../services/syncService';
+import { syncPendingBudgets, syncPendingTransactions } from '../services/syncService';
 import { useNetworkStatus } from './useNetworkStatus';
 
 export function useSync() {
@@ -8,7 +8,7 @@ export function useSync() {
 
   useEffect(() => {
     if (isOnline) {
-      syncPendingTransactions().catch((error) => {
+      Promise.all([syncPendingTransactions(), syncPendingBudgets()]).catch((error) => {
         console.error('Synchronization failed:', error);
       });
     }

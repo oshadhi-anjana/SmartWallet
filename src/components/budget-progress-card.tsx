@@ -35,6 +35,11 @@ export default function BudgetProgressCard({
         <Text>{percentage.toFixed(0)}%</Text>
       </View>
 
+      <View style={styles.allocatedRow}>
+        <Text style={styles.allocatedLabel}>Allocated budget</Text>
+        <Text style={styles.allocatedValue}>LKR {budget.toLocaleString('en-LK', { minimumFractionDigits: 2 })}</Text>
+      </View>
+
       <View style={styles.track}>
         <View style={[styles.progress, { width: `${percentage}%` }]} />
       </View>
@@ -62,6 +67,21 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  allocatedRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  allocatedLabel: {
+    color: '#68756F',
+    fontSize: 12,
+  },
+  allocatedValue: {
+    color: '#0F9D58',
+    fontWeight: '700',
+    fontSize: 13,
   },
   track: {
     height: 10,
