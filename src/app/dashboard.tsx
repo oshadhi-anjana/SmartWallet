@@ -54,10 +54,10 @@ export default function DashboardScreen() {
 
   const firstName = auth.currentUser?.displayName?.split(' ')[0] || 'there';
   const quickActions = [
-    ['Add expense', 'bag-remove-outline', '/add-transaction', '#FFE6DF', '#D32F2F'],
-    ['Add income', 'wallet-outline', '/add-transaction?type=income', '#E3F4E7', '#2E7D32'],
+    ['Add transaction', 'add-circle-outline', '/add-transaction', '#E3F4E7', '#0F9D58'],
     ['Budgets', 'calendar-outline', '/budget', '#FFF0DC', '#F57C00'],
     ['Savings', 'shield-checkmark-outline', '/savings', '#FFF4CD', '#B77900'],
+    ['Spending report', 'pie-chart-outline', '/analytics', '#FFE6DF', '#D32F2F'],
   ] as const;
 
   return (
@@ -120,14 +120,6 @@ export default function DashboardScreen() {
             ))}
           </View>
 
-          <Pressable style={styles.reportCard} onPress={() => router.push('/analytics' as never)}>
-            <View style={styles.reportIcon}><Ionicons name="pie-chart-outline" size={24} color="#F57C00" /></View>
-            <View style={styles.reportCopy}>
-              <ThemedText type="smallBold">Spending reports</ThemedText>
-              <ThemedText themeColor="textSecondary" style={styles.reportText}>See where your money goes</ThemedText>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#68756F" />
-          </Pressable>
         </ScrollView>
         <ScreenNav />
       </SafeAreaView>
@@ -204,7 +196,4 @@ const styles = StyleSheet.create({
   transactionIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   transactionCopy: { flex: 1, paddingHorizontal: 11 }, transactionDate: { fontSize: 11, lineHeight: 16 },
   empty: { alignItems: 'center', padding: 26, gap: 5 }, center: { textAlign: 'center', fontSize: 13 },
-  reportCard: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 14, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ECE9DF' },
-  reportIcon: { width: 45, height: 45, borderRadius: 15, backgroundColor: '#FFF0DC', alignItems: 'center', justifyContent: 'center' },
-  reportCopy: { flex: 1, paddingHorizontal: 12 }, reportText: { fontSize: 12 },
 });

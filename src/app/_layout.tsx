@@ -99,7 +99,12 @@ export default function RootLayout() {
           name="analytics"
           options={{ title: 'SmartWallet' }}
         />
+         <Stack.Screen
+          name="transactions"
+          options={{ title: 'SmartWallet' }}
+        />
       </Stack>
+      
 
       <AnimatedSplashOverlay />
     </ThemeProvider>

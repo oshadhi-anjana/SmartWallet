@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { usePathname, useRouter } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const destinations = [
   ['/dashboard', 'home-outline', 'home', 'Dashboard'],
   ['/transactions', 'receipt-outline', 'receipt', 'Transactions'],
-  ['/add-transaction', 'add', 'add', 'Add transaction'],
-  ['/budget', 'wallet-outline', 'wallet', 'Budgets'],
+  ['/add-transaction', 'add', 'add', 'Add'],
+  ['/budget', 'wallet-outline', 'wallet', 'Monthly Budget'],
   ['/profile', 'person-outline', 'person', 'Profile'],
 ] as const;
 
@@ -28,12 +28,21 @@ export function ScreenNav() {
             accessibilityState={{ selected: active }}
             key={href}
             onPress={() => router.replace(href as never)}
-            style={[styles.item, isAdd && styles.addItem, active && !isAdd && styles.activeItem]}>
-            <Ionicons
-              name={(active ? activeIcon : icon) as never}
-              size={isAdd ? 30 : 23}
-              color={isAdd || active ? '#FFFFFF' : '#68756F'}
-            />
+            style={styles.item}>
+            <View style={[styles.iconContainer, isAdd && styles.addItem, active && !isAdd && styles.activeItem]}>
+              <Ionicons
+                name={(active ? activeIcon : icon) as never}
+                size={isAdd ? 29 : 22}
+                color={isAdd || active ? '#FFFFFF' : '#68756F'}
+              />
+            </View>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+              style={[styles.label, (active || isAdd) && styles.activeLabel]}>
+              {label}
+            </Text>
           </Pressable>
         );
       })}
@@ -46,8 +55,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 14,
     right: 14,
-    height: 64,
-    paddingHorizontal: 10,
+    height: 76,
+    paddingHorizontal: 5,
+    paddingTop: 5,
     borderRadius: 22,
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
@@ -62,13 +72,16 @@ const styles = StyleSheet.create({
     elevation: 10,
     zIndex: 20,
   },
-  item: { width: 43, height: 43, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  item: { flex: 1, height: 68, alignItems: 'center', justifyContent: 'flex-end', gap: 2 },
+  iconContainer: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   activeItem: { backgroundColor: '#0F9D58' },
+  label: { color: '#68756F', fontSize: 9, lineHeight: 12, fontWeight: '600', width: '100%', textAlign: 'center' },
+  activeLabel: { color: '#0F9D58', fontWeight: '800' },
   addItem: {
     width: 54,
     height: 54,
     borderRadius: 27,
-    marginTop: -28,
+    marginTop: -22,
     backgroundColor: '#0F9D58',
     borderWidth: 4,
     borderColor: '#F7F8FA',
